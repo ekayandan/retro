@@ -9,6 +9,12 @@ const Art = (() => {
     gba: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance/master/',
     snes: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Super_Nintendo_Entertainment_System/master/',
     segaMD: 'https://raw.githubusercontent.com/libretro-thumbnails/Sega_-_Mega_Drive_-_Genesis/master/',
+    segaMS: 'https://raw.githubusercontent.com/libretro-thumbnails/Sega_-_Master_System_-_Mark_III/master/',
+    segaGG: 'https://raw.githubusercontent.com/libretro-thumbnails/Sega_-_Game_Gear/master/',
+    pce: 'https://raw.githubusercontent.com/libretro-thumbnails/NEC_-_PC_Engine_-_TurboGrafx_16/master/',
+    psx: 'https://raw.githubusercontent.com/libretro-thumbnails/Sony_-_PlayStation/master/',
+    n64: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Nintendo_64/master/',
+    nds: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Nintendo_DS/master/',
   };
   const KINDS = ['Named_Boxarts', 'Named_Titles'];
   const REGION = { U: 'USA', E: 'Europe', J: 'Japan', W: 'World', UE: 'USA, Europe', JU: 'Japan, USA' };

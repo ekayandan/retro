@@ -1,5 +1,6 @@
 /* Player page for every system except NES. Runs EmulatorJS cores (GPL-3.0, files in ejs/):
- *   gb: gambatte (Game Boy / Color), gba: mGBA, snes: Snes9x, segaMD: Genesis Plus GX, psp: PPSSPP.
+ *   gb: gambatte, gba: mGBA, snes: Snes9x, Sega MD/MS/GG: Genesis Plus GX, pce: Mednafen PCE,
+ *   psx: PCSX ReARMed, n64: Mupen64Plus-Next, nds: melonDS, psp: PPSSPP.
  * - The game file comes from the browser's private file system (see Files in storage.js).
  * - In-game saves (memory stick) are kept by EmulatorJS in its own IndexedDB (IDBFS at /data/saves).
  * - A resume point is saved to our 'states' store when leaving, and loaded on the next start.
@@ -66,7 +67,10 @@
   const resume = await Store.get('states', id + ':auto');
   Object.assign(window, {
     EJS_player: '#game',
-    EJS_core: game.system,
+    // Pin the core per system (EmulatorJS would pick smsplus for Master System, which we don't ship)
+    EJS_core: { gb: 'gambatte', gba: 'mgba', snes: 'snes9x', segaMD: 'genesis_plus_gx', segaMS: 'genesis_plus_gx',
+      segaGG: 'genesis_plus_gx', pce: 'mednafen_pce', psx: 'pcsx_rearmed', n64: 'mupen64plus_next', nds: 'melonds',
+      psp: 'psp' }[game.system] || game.system,
     EJS_pathtodata: 'ejs/',
     EJS_gameUrl: file,
     EJS_gameName: id,           // stable name for EmulatorJS's own save files

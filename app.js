@@ -27,9 +27,12 @@ const SYSTEM_BY_EXT = {
   gb: 'gb', gbc: 'gb', gba: 'gba',
   sfc: 'snes', smc: 'snes',
   md: 'segaMD', gen: 'segaMD', smd: 'segaMD',
+  sms: 'segaMS', gg: 'segaGG', pce: 'pce',
+  z64: 'n64', n64: 'n64', v64: 'n64', nds: 'nds',
+  chd: 'psx', // PS1 single-file discs; .cue/.bin go in a .zip
 };
 const extOf = (name) => (name.match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase();
-const OTHER_IN_ZIP = /\.(gb|gbc|gba|sfc|smc|md|gen|smd)$/i;
+const OTHER_IN_ZIP = /\.(gb|gbc|gba|sfc|smc|md|gen|smd|sms|gg|pce|z64|n64|v64|nds)$/i;
 
 // Big files: fingerprint size + first and last MB instead of hashing gigabytes.
 async function bigFileId(file, system) {
@@ -80,7 +83,7 @@ async function render() {
     if (g.system !== 'nes') {
       const badge = document.createElement('span');
       badge.className = 'badge';
-      badge.textContent = { gb: 'GB', gba: 'GBA', snes: 'SNES', segaMD: 'GENESIS', psp: 'PSP' }[g.system] || g.system;
+      badge.textContent = { gb: 'GB', gba: 'GBA', snes: 'SNES', segaMD: 'GENESIS', segaMS: 'SMS', segaGG: 'GG', pce: 'PCE', psx: 'PS1', n64: 'N64', nds: 'DS', psp: 'PSP' }[g.system] || g.system;
       cover.append(badge);
     }
     cover.onclick = () => play(g);
@@ -121,7 +124,12 @@ $('#file').onchange = async (e) => {
     let entries = [];
     if (/\.zip$/i.test(f.name)) {
       try {
-        entries = await unzip(buf, /\.(nes|gb|gbc|gba|sfc|smc|md|gen|smd)$/i);
+        // A PS1 disc as .cue + .bin tracks: keep the whole zip, EmulatorJS unpacks it
+        if ((await unzip(buf, /\.cue$/i)).length) {
+          if (await addFile(f, 'psx')) added++;
+          continue;
+        }
+        entries = await unzip(buf, /\.(nes|gb|gbc|gba|sfc|smc|md|gen|smd|sms|gg|pce|z64|n64|v64|nds)$/i);
         for (const e of entries.filter((x) => OTHER_IN_ZIP.test(x.name))) {
           if (await addFile(new File([e.data], e.name), SYSTEM_BY_EXT[extOf(e.name)])) added++;
         }

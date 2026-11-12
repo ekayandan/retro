@@ -1,6 +1,6 @@
 // Everything is kept in IndexedDB on the device.
 //   games:  id -> { id, name, title, system, size, added, played, art: 'ok'|'none'|undefined, artTried }
-//   roms:   id -> Uint8Array (the game file)
+//   roms:   id -> Uint8Array (NES game; PSP games live in OPFS, see Files)
 //   sram:   id -> Uint8Array (battery save, 8 KB)
 //   states: `${id}:auto` | `${id}:1` -> save state object
 //   art:    id -> Blob (small JPEG cover)
@@ -31,12 +31,45 @@ const Store = (() => {
     all: (s) => run(s, 'readonly', (o) => o.getAll()),
     async removeGame(id) {
       await Promise.all([
+        Files.remove(id),
         Store.del('games', id), Store.del('roms', id), Store.del('sram', id),
-        Store.del('states', id + ':auto'), Store.del('states', id + ':1'), Store.del('art', id),
+        Store.del('states', id + ':auto'), Store.del('states', id + ':1'), Store.del('states', id + ':psp'), Store.del('art', id),
       ]);
     },
   };
 })();
+
+// Big game files (PSP, up to ~2 GB) live in the browser's private file system (OPFS),
+// written as a stream so they never sit in memory. Older Safari: stored as a Blob in IndexedDB.
+const Files = {
+  async dir() {
+    const root = await navigator.storage.getDirectory();
+    return root.getDirectoryHandle('games', { create: true });
+  },
+  async write(id, file, onProgress) {
+    let handle;
+    try { handle = await (await Files.dir()).getFileHandle(id, { create: true }); } catch { handle = null; }
+    if (!handle || !handle.createWritable) { await Store.put('roms', id, file); return; }
+    const writable = await handle.createWritable();
+    let done = 0;
+    const progress = new TransformStream({
+      transform(chunk, ctrl) { done += chunk.byteLength; onProgress?.(done / file.size); ctrl.enqueue(chunk); },
+    });
+    await file.stream().pipeThrough(progress).pipeTo(writable);
+  },
+  async read(id, name) {
+    try {
+      const f = await (await (await Files.dir()).getFileHandle(id)).getFile();
+      return name ? new File([f], name) : f; // keep the original name: emulators pick the loader by extension
+    } catch {
+      const blob = await Store.get('roms', id);
+      return blob && new File([blob], name || 'game');
+    }
+  },
+  async remove(id) {
+    try { await (await Files.dir()).removeEntry(id); } catch { /* not there */ }
+  },
+};
 
 // Minimal .zip reader: pulls every .nes file out of an archive.
 async function unzip(buffer, wanted = /\.nes$/i) {

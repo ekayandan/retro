@@ -1,4 +1,4 @@
-/* Retro — NES emulator PWA. Core: jsnes (Apache-2.0). */
+/* Retro — emulator PWA. NES: jsnes (Apache-2.0). PSP: EmulatorJS + PPSSPP (GPL-3.0), see psp.js. */
 const $ = (s) => document.querySelector(s);
 const library = $('#library'), player = $('#player'), grid = $('#grid');
 const menu = $('#menu'), opts = $('#opts');
@@ -19,6 +19,31 @@ async function gameId(u8) {
   let h = 0x811c9dc5; // FNV-1a fallback (plain http)
   for (const b of u8) h = Math.imul(h ^ b, 0x01000193);
   return (h >>> 0).toString(16) + u8.length.toString(16);
+}
+
+const PSP_EXT = /\.(iso|cso|pbp)$/i;
+
+// Big files: fingerprint size + first and last MB instead of hashing gigabytes.
+async function bigFileId(file) {
+  const MB = 1 << 20;
+  const head = new Uint8Array(await file.slice(0, MB).arrayBuffer());
+  const tail = new Uint8Array(await file.slice(Math.max(0, file.size - MB)).arrayBuffer());
+  const buf = new Uint8Array(head.length + tail.length + 8);
+  buf.set(head); buf.set(tail, head.length);
+  new DataView(buf.buffer).setFloat64(head.length + tail.length, file.size);
+  return 'psp-' + (await gameId(buf));
+}
+
+async function addPsp(file) {
+  const id = await bigFileId(file);
+  if (await Store.get('games', id)) return false;
+  const free = await navigator.storage?.estimate?.();
+  if (free && free.quota - free.usage < file.size * 1.1) throw new Error('Not enough free space for ' + file.name);
+  await Files.write(id, file, (p) => setStatus(`Copying ${file.name}… ${Math.round(p * 100)}%`));
+  await Store.put('games', id, {
+    id, name: file.name, title: Art.displayTitle(file.name), system: 'psp', size: file.size, added: Date.now(), played: 0,
+  });
+  return true;
 }
 
 async function render() {
@@ -43,6 +68,12 @@ async function render() {
     } else {
       cover.classList.add('noart');
       cover.textContent = g.title;
+    }
+    if (g.system !== 'nes') {
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = g.system.toUpperCase();
+      cover.append(badge);
     }
     cover.onclick = () => play(g);
     const row = document.createElement('div');
@@ -73,6 +104,10 @@ $('#file').onchange = async (e) => {
   let added = 0, skipped = 0;
   setStatus('Adding…');
   for (const f of files) {
+    if (PSP_EXT.test(f.name)) {
+      try { if (await addPsp(f)) added++; } catch (err) { skipped++; alert(err.message); }
+      continue;
+    }
     const buf = await f.arrayBuffer();
     let entries = [];
     if (/\.zip$/i.test(f.name)) { try { entries = await unzip(buf); } catch { /* not a zip */ } }
@@ -91,7 +126,7 @@ $('#file').onchange = async (e) => {
   }
   if (navigator.storage?.persist) navigator.storage.persist(); // ask the browser not to evict our data
   await render();
-  setStatus(`${added} added${skipped ? `, ${skipped} skipped (not an NES game)` : ''}`);
+  setStatus(`${added} added${skipped ? `, ${skipped} skipped (not a supported game)` : ''}`);
   fetchMissingArt();
 };
 
@@ -193,6 +228,12 @@ async function saveAll() {
 }
 
 async function play(game) {
+  if (game.system === 'psp') {
+    game.played = Date.now();
+    await Store.put('games', game.id, game);
+    location.href = 'psp.html#' + game.id;
+    return;
+  }
   startAudio(); // must happen inside the tap for iOS
   const rom = await Store.get('roms', game.id);
   nes = new jsnes.NES({

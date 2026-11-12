@@ -1,7 +1,7 @@
 {
   "name": "Retro",
   "short_name": "Retro",
-  "description": "Play your own NES game files in the browser, offline.",
+  "description": "Play your own NES and PSP game files in the browser, offline.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

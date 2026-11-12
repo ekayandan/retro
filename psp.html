@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Retro — PSP</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html, body { background: #000; overflow: hidden; }
+    #game { position: fixed; inset: 0; }
+    #back { left: calc(env(safe-area-inset-left) + 8px); right: auto; z-index: 10; }
+    #msg { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+      padding: 24px; color: var(--muted); z-index: 5; pointer-events: none; }
+    #msg a { color: #a5b4fc; pointer-events: auto; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="msg">Loading…</div>
+  <button id="back" class="menu-btn" aria-label="Save and go back">←</button>
+  <script src="storage.js"></script>
+  <script src="psp.js"></script>
+</body>
+</html>

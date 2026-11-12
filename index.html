@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Retro</title>
-  <meta name="description" content="Play your own NES game files in the browser, offline.">
+  <meta name="description" content="Play your own NES and PSP game files in the browser, offline.">
   <meta name="theme-color" content="#111827">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -21,10 +21,10 @@
     <header class="topbar">
       <h1>Retro</h1>
       <label class="btn primary" for="file">+ Add games</label>
-      <input id="file" type="file" accept=".nes,.zip" multiple hidden>
+      <input id="file" type="file" accept=".nes,.zip,.iso,.cso,.pbp" multiple hidden>
     </header>
     <p id="empty" class="empty" hidden>
-      Add <b>.nes</b> or <b>.zip</b> files from your device.<br>
+      Add NES (<b>.nes</b>, <b>.zip</b>) or PSP (<b>.iso</b>, <b>.cso</b>) games from your device.<br>
       They stay in this browser — nothing is uploaded.
     </p>
     <div id="grid" class="grid"></div>

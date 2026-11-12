@@ -3,6 +3,7 @@
 const Art = (() => {
   const REPO = {
     nes: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Nintendo_Entertainment_System/master/',
+    psp: 'https://raw.githubusercontent.com/libretro-thumbnails/Sony_-_PlayStation_Portable/master/',
   };
   const KINDS = ['Named_Boxarts', 'Named_Titles'];
   const REGION = { U: 'USA', E: 'Europe', J: 'Japan', W: 'World', UE: 'USA, Europe', JU: 'Japan, USA' };

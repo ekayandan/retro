@@ -7,7 +7,7 @@ const menu = $('#menu'), opts = $('#opts');
 const artUrls = new Map();
 let optsGame = null;
 
-function setStatus(msg) { $('#status').textContent = msg || ''; }
+function setStatus(msg) { $('#status').textContent = msg || ''; updateHints(); }
 
 function isNes(u8) { return u8.length > 16 && u8[0] === 0x4e && u8[1] === 0x45 && u8[2] === 0x53 && u8[3] === 0x1a; }
 
@@ -603,9 +603,11 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Gamepads and phones: held directions repeat (like holding a key), buttons fire once per press.
+// Gamepads and phones (nav-input.js turns their state into actions): a press fires once, a held direction
+// repeats. On the first frame a menu is on screen, whatever is held is ignored until released.
 const phoneNav = new Map(); // player -> latest phone state {b: [RetroPad indices], x, y}
-const navHeld = new Map();  // 'source:action' -> time of the next repeat
+const navRepeat = NavInput.repeater();
+let navWasActive = false;
 function navAct(a) {
   const dlg = document.querySelector('dialog[open]');
   if (DIRS.includes(a)) return move(a);
@@ -625,36 +627,48 @@ function navAct(a) {
   }
   if (a === 'opts' && !dlg) { const g = focusedGame(); if (g) openOpts(g); }
 }
-function navFrame(src, acts, now) {
-  for (const a of [...DIRS, 'ok', 'back', 'opts']) {
-    const k = src + ':' + a, next = navHeld.get(k);
-    if (!acts.has(a)) { navHeld.delete(k); continue; }
-    if (next === undefined) { navHeld.set(k, DIRS.includes(a) ? now + 380 : Infinity); setInput('pad'); navAct(a); }
-    else if (now >= next) { navHeld.set(k, now + 110); navAct(a); }
-  }
-}
 function navTick(now) {
   requestAnimationFrame(navTick);
-  if (running || (library.hidden && !document.querySelector('dialog[open]'))) return; // a game owns the controls
+  const active = !running && !(library.hidden && !document.querySelector('dialog[open]')); // else a game owns the controls
+  const swallow = active && !navWasActive;
+  navWasActive = active;
+  if (!active) return;
+  const fire = (actions) => { for (const a of actions) { setInput('pad'); navAct(a); } };
   for (const gp of navigator.getGamepads?.() || []) {
-    if (!gp?.connected) continue;
-    const b = (i) => gp.buttons[i]?.pressed, ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, acts = new Set();
-    if (b(12) || ay < -0.5) acts.add('up'); if (b(13) || ay > 0.5) acts.add('down');
-    if (b(14) || ax < -0.5) acts.add('left'); if (b(15) || ax > 0.5) acts.add('right');
-    if (b(0)) acts.add('ok'); if (b(1)) acts.add('back'); if (b(2) || b(3)) acts.add('opts');
-    navFrame('pad' + gp.index, acts, now);
+    if (gp?.connected) fire(navRepeat.frame('pad' + gp.index, NavInput.fromGamepad(gp), now, swallow));
   }
-  // Phones send RetroPad indices: 4-7 d-pad, 8 A, 0 B, 9 X, 1 Y, 3 Start; x/y is the analog stick.
-  for (const [p, st] of phoneNav) {
-    const has = (i) => st.b.includes(i), acts = new Set();
-    if (has(4) || st.y < -0.5) acts.add('up'); if (has(5) || st.y > 0.5) acts.add('down');
-    if (has(6) || st.x < -0.5) acts.add('left'); if (has(7) || st.x > 0.5) acts.add('right');
-    if (has(8) || has(3)) acts.add('ok'); if (has(0)) acts.add('back'); if (has(9) || has(1)) acts.add('opts');
-    navFrame('phone' + p, acts, now);
-  }
+  for (const [p, st] of phoneNav) fire(navRepeat.frame('phone' + p, NavInput.fromPhone(st), now, swallow));
 }
 requestAnimationFrame(navTick);
+// Hidden tabs get no gamepad data: forget what was held, and ignore it again when the tab comes back.
+document.addEventListener('visibilitychange', () => { if (document.hidden) { navRepeat.reset(); navWasActive = false; } });
 window.addEventListener('gamepadconnected', () => setInput('pad'));
+
+// ---------- Hints: what the buttons do, on the screen that's showing ----------
+// The bar is a popover (top layer), so it also shows above open dialogs: "Choose / Play / Options" on the
+// home screen, "Choose / Select / Back" in a dialog (including the in-game menu). Hidden while a game is
+// playing, and on touch screens unless there's a status message. A dialog opened later sits above the
+// popover in the top layer, so the bar is re-shown whenever the topmost dialog changes.
+const hints = $('#hints');
+const canPopover = typeof hints.showPopover === 'function';
+if (!canPopover) hints.removeAttribute('popover'); // older browsers: a plain fixed bar, toggled by class
+let hintsAbove = null; // the dialog the bar was last shown above
+function updateHints() {
+  const dlgs = document.querySelectorAll('dialog[open]'), dlg = dlgs[dlgs.length - 1] || null;
+  const touchOnly = matchMedia('(hover: none)').matches && document.body.dataset.input !== 'pad';
+  const show = !!(dlg || !library.hidden) && (!touchOnly || !!$('#status').textContent);
+  hints.dataset.ctx = dlg ? 'dialog' : 'home';
+  document.body.toggleAttribute('data-hints', show && !dlg && !library.hidden); // the home screen makes room
+  if (!canPopover) { hints.classList.toggle('shown', show); return; }
+  const open = hints.matches(':popover-open');
+  if (!show) { if (open) hints.hidePopover(); hintsAbove = null; return; }
+  if (open && dlg === hintsAbove) return;
+  if (open) hints.hidePopover();
+  hints.showPopover();
+  hintsAbove = dlg;
+}
+// Dialogs opening/closing, the game screen showing/hiding, keyboard vs gamepad
+new MutationObserver(updateHints).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open', 'hidden', 'data-input'] });
 
 // Top right: who's connected (like controller lights) and the time.
 Link.onChange(() => {
@@ -671,5 +685,5 @@ tickClock();
 setInterval(tickClock, 15000);
 
 // ---------- Boot ----------
-render().then(() => fetchMissingArt());
+render().then(() => { updateHints(); fetchMissingArt(); });
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js');

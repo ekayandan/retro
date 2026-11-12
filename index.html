@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Retro</title>
+  <meta name="description" content="Play your own NES game files in the browser, offline.">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Retro">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- LIBRARY -->
+  <main id="library" class="screen">
+    <header class="topbar">
+      <h1>Retro</h1>
+      <label class="btn primary" for="file">+ Add games</label>
+      <input id="file" type="file" accept=".nes,.zip" multiple hidden>
+    </header>
+    <p id="empty" class="empty" hidden>
+      Add <b>.nes</b> or <b>.zip</b> files from your device.<br>
+      They stay in this browser — nothing is uploaded.
+    </p>
+    <div id="grid" class="grid"></div>
+    <footer id="status" class="status"></footer>
+  </main>
+
+  <!-- PLAYER -->
+  <section id="player" class="screen" hidden>
+    <div class="screen-wrap"><canvas id="screen" width="256" height="240"></canvas></div>
+    <div id="pad" class="pad">
+      <div class="dpad" data-dpad><span></span></div>
+      <div class="mid">
+        <button class="pill" data-b="2">SELECT</button>
+        <button class="pill" data-b="3">START</button>
+      </div>
+      <div class="ab">
+        <button class="round" data-b="1">B</button>
+        <button class="round" data-b="0">A</button>
+      </div>
+    </div>
+    <button id="menu-btn" class="menu-btn" aria-label="Menu">☰</button>
+  </section>
+
+  <!-- IN-GAME MENU -->
+  <dialog id="menu">
+    <h2 id="menu-title"></h2>
+    <button data-act="resume" class="btn primary">Resume</button>
+    <button data-act="save" class="btn">Save state</button>
+    <button data-act="load" class="btn">Load state</button>
+    <button data-act="reset" class="btn">Restart game</button>
+    <button data-act="mute" class="btn">Sound: on</button>
+    <button data-act="quit" class="btn">Back to library</button>
+  </dialog>
+
+  <!-- GAME OPTIONS -->
+  <dialog id="opts">
+    <h2 id="opts-title"></h2>
+    <button data-act="art" class="btn">Find box art again</button>
+    <button data-act="delete" class="btn danger">Delete game and saves</button>
+    <button data-act="close" class="btn">Close</button>
+  </dialog>
+
+  <script src="lib/jsnes.min.js"></script>
+  <script src="storage.js"></script>
+  <script src="art.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

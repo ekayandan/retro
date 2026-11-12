@@ -34,4 +34,4 @@ Open http://localhost:8742. Offline mode needs `localhost` or HTTPS.
 - Storage: everything lives in IndexedDB. The app asks the browser to keep it (`navigator.storage.persist()`).
   On iPhone, add it to the Home Screen — Safari can clear data of sites not opened for 7 days, installed apps are exempt.
 - Only NES/Famicom (iNES files). Most mappers work; a few rare ones don't.
-- Users must own the games they load. Free homebrew to test with: https://www.nesdev.org/wiki/Homebrew_games
+- Users must own the games they load. Free homebrew to test with: [Minekart Madness](https://github.com/mhughson/mbh-cart) (MIT), [Nova the Squirrel](https://github.com/NovaSquirrel/NovaTheSquirrel/releases), more at https://www.nesdev.org/wiki/Homebrew_games

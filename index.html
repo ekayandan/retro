@@ -59,12 +59,17 @@
       <input id="file" type="file" accept=".nes,.zip,.gb,.gbc,.gba,.sfc,.smc,.md,.gen,.smd,.sms,.gg,.pce,.z64,.n64,.v64,.nds,.chd,.iso,.cso,.pbp" multiple hidden>
     </nav>
 
-    <footer class="hints">
-      <span id="status" class="status" role="status"></span>
-      <span class="keys keys-kb"><kbd>←</kbd><kbd>→</kbd> Choose <kbd>Enter</kbd> Play <kbd>O</kbd> Options</span>
-      <span class="keys keys-pad"><kbd class="b-a">A</kbd> Play <kbd class="b-x">X</kbd> Options <kbd class="b-b">B</kbd> Back</span>
-    </footer>
   </main>
+
+  <!-- Button hints for the screen that's showing. A popover, so it sits in the top layer and stays visible
+       above open dialogs too; app.js ("Hints") shows it on the home screen and in menus, not during play. -->
+  <div id="hints" class="hints" popover="manual" data-ctx="home">
+    <span id="status" class="status" role="status"></span>
+    <span class="keys keys-kb ctx-home"><kbd>←</kbd><kbd>→</kbd> Choose <kbd>Enter</kbd> Play <kbd>O</kbd> Options</span>
+    <span class="keys keys-pad ctx-home"><kbd class="b-a">A</kbd> Play <kbd class="b-x">X</kbd> Options</span>
+    <span class="keys keys-kb ctx-dialog"><kbd>↑</kbd><kbd>↓</kbd> Choose <kbd>Enter</kbd> Select <kbd>Esc</kbd> Back</span>
+    <span class="keys keys-pad ctx-dialog"><kbd class="b-a">A</kbd> Select <kbd class="b-b">B</kbd> Back</span>
+  </div>
 
   <!-- PLAYER -->
   <section id="player" class="screen" hidden>
@@ -148,6 +153,7 @@
   <script src="lib/peerjs.min.js"></script>
   <script src="lib/qrcode.js"></script>
   <script src="link.js"></script>
+  <script src="nav-input.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

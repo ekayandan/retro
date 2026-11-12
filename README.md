@@ -9,7 +9,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 - **Box art**: downloaded once when online from [libretro-thumbnails](https://github.com/libretro-thumbnails), shrunk to a ~20 KB JPEG and kept on the device. Games without art retry weekly; ⋯ → *Find box art again*. Best match when files use official names, e.g. `Game Name (USA).nes`.
 - **Saves**: in-game battery saves are written as you play. Leaving the game (or switching apps) saves a resume point, so you continue exactly where you left off. One manual save-state slot in the ☰ menu.
 - **Controls**: touch pad (multi-touch, slide between buttons), keyboard (arrows/WASD, X/K = A, Z/J = B, Enter = Start, Shift = Select, Esc = menu), and any gamepad (Xbox/PS/Switch Pro, incl. TV boxes).
-- **Phones as controllers**: 📱 *Controllers* (library, NES menu, or the 📱 button in game) shows a QR code. Scan it with a phone and it becomes a controller: joystick on the left, buttons for the system on the right. Each phone is the next player (up to 4; NES has 2). Phones connect straight to the computer over WebRTC; only the first handshake goes through the free public [PeerJS](https://peerjs.com) server, so connecting needs internet for a moment. The phone keeps its player number and reconnects by itself when you switch games. N64, PS1 and PSP have a *Stick: analog / d-pad* switch.
+- **Phones as controllers**: 📱 *Controllers* (library, NES menu, or the 📱 button in game) shows a QR code. Scan it with a phone and it becomes a controller: a floating joystick on the left (put your thumb anywhere; it follows your thumb), big buttons for the system on the right (the whole right side is live: the nearest button wins, and landing between two presses both). Each phone is the next player (up to 4; NES has 2). Phones connect straight to the computer over WebRTC; only the first handshake goes through the free public [PeerJS](https://peerjs.com) server, so connecting needs internet for a moment. The phone keeps its player number and reconnects by itself when you switch games. N64, PS1 and PSP have a *Stick: analog / d-pad* switch.
 
 ## Files
 
@@ -23,6 +23,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `pad.html`, `pad.js`, `pad.css` | the phone controller page (`pad.html?demo=psp` previews a system's layout) |
 | `lib/peerjs.min.js` | [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT, see `lib/peerjs.LICENSE`) |
 | `lib/qrcode.js` | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT) |
+| `lib/nipplejs.min.js` | [nipplejs](https://github.com/yoannmoinet/nipplejs) 1.0.4, the phone joystick (MIT, see `lib/nipplejs.LICENSE`) |
 | `ejs/` | [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) 4.2.3 with cores: gambatte, mGBA, Snes9x, Genesis Plus GX, Mednafen PCE, PCSX ReARMed, Mupen64Plus-Next, melonDS, PPSSPP (GPL-3.0) |
 | `lib/jsnes.min.js` | emulator core, [jsnes](https://github.com/bfirsh/jsnes) 2.1.0 (Apache-2.0, see `lib/jsnes.LICENSE`) |
 | `sw.js` | offline cache, plus the cross-origin isolation headers PSP threads need (GitHub Pages can't send them). **Bump `VERSION` on every change** so phones update |

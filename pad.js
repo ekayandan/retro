@@ -1,6 +1,6 @@
 /* Phone controller. Opened from the QR code on the laptop: pad.html#<room>. See link.js for the protocol.
- * Left half: a floating joystick (put your thumb anywhere). Right half: big buttons for the system that's
- * playing; slide between them, press several at once. */
+ * Left side: a floating joystick (nipplejs) — put your thumb anywhere. Right side: big buttons for the system
+ * that's playing; the whole area is live (nearest button wins), slide between them, press several at once. */
 (() => {
   const $ = (s) => document.querySelector(s);
   const PREFIX = 'retro-pad-';
@@ -151,44 +151,67 @@
     markDirty();
   };
 
-  // ---------- Buttons (right side + shoulders + start/select): every finger counts ----------
+  // ---------- Buttons: the whole right side is live ----------
+  // A finger presses the button it's on; anywhere else on the right side it presses the nearest face
+  // button, so there are no dead gaps. Landing between two face buttons presses both (like rolling your
+  // thumb across B+A on a real pad).
   const fingers = new Map(); // pointerId -> {x,y}, fingers not on the stick
+  const right = $('#right');
+  function centers(sel) {
+    return [...document.querySelectorAll(sel)].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { i: +el.dataset.i, x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2 };
+    });
+  }
+  function hits(x, y, out) {
+    const el = document.elementFromPoint(x, y)?.closest('[data-i]');
+    const inFace = el ? el.closest('#face, #cpad') : right.contains(document.elementFromPoint(x, y));
+    if (el && !inFace) { out.add(+el.dataset.i); return; } // shoulders, start/select
+    if (!inFace) return;
+    const group = el?.closest('#cpad') ? '#cpad [data-i]' : '#face [data-i]';
+    const near = centers(group).map((c) => ({ ...c, d: Math.hypot(x - c.x, y - c.y) })).sort((a, b) => a.d - b.d);
+    if (!near.length) return;
+    out.add(near[0].i);
+    if (near[1] && near[1].d - near[0].d < near[0].r * 0.35) out.add(near[1].i);
+  }
   function buttonsUpdate() {
     const next = new Set();
-    for (const { x, y } of fingers.values()) {
-      const el = document.elementFromPoint(x, y)?.closest('[data-i]');
-      if (el) next.add(+el.dataset.i);
-    }
+    for (const { x, y } of fingers.values()) hits(x, y, next);
     if ([...next].some((i) => !touchBtns.has(i))) navigator.vibrate?.(12);
     touchBtns.clear(); next.forEach((i) => touchBtns.add(i));
     document.querySelectorAll('[data-i]').forEach((b) => b.classList.toggle('on', touchBtns.has(+b.dataset.i)));
     markDirty();
   }
 
-  // ---------- Stick: floating, appears where the thumb lands ----------
-  const zone = $('#stickZone'), base = $('#base'), knob = $('#knob');
-  let stickId = null, ox = 0, oy = 0;
-  const R = () => Math.min(70, zone.clientWidth * 0.25);
-  function stickMove(x, y) {
-    const r = R();
-    let dx = (x - ox) / r, dy = (y - oy) / r;
-    const len = Math.hypot(dx, dy);
-    if (len > 1) { dx /= len; dy /= len; }
-    knob.style.transform = `translate(${dx * r}px, ${dy * r}px)`;
+  // ---------- Stick: nipplejs (MIT). Appears under the thumb and follows it past the edge. ----------
+  const zone = $('#stickZone');
+  let stick = null;
+  function makeStick() {
+    stick?.destroy();
+    const size = Math.round(Math.max(90, Math.min(150, zone.clientHeight * 0.55, zone.clientWidth * 0.6)));
+    stick = nipplejs.create({
+      zone, mode: 'dynamic', size, color: '#6366f1', follow: true, multitouch: false, maxNumberOfJoysticks: 1,
+      threshold: 0.1, fadeTime: 120,
+    });
+    stick.on('move', ({ data }) => stickMove(data));
+    stick.on('end', stickEnd);
+  }
+  function stickMove(d) {
+    const f = Math.min(1, d.force || 0), a = d.angle?.radian || 0;
+    const dx = Math.cos(a) * f, dy = -Math.sin(a) * f; // nipplejs: 90° = up; we send y down
     if (stickMode === 'analog') {
-      const dead = 0.12, m = Math.min(1, len);
-      const k = m < dead ? 0 : (m - dead) / (1 - dead) / (m || 1);
+      const dead = 0.1, k = f < dead ? 0 : (f - dead) / (1 - dead) / (f || 1);
       ax = dx * k; ay = dy * k;
       stickBtns.clear();
     } else {
-      // 8 directions, 0.35 dead zone: diagonals need a clear diagonal push
+      // 8 directions with a 0.3 dead zone; each diagonal gets a 45° slice
       const next = new Set();
-      if (len > 0.35) {
-        const a = Math.atan2(dy, dx) * 180 / Math.PI; // 0 = right, 90 = down
-        if (a > -67.5 && a < 67.5) next.add(7);
-        if (a > 112.5 || a < -112.5) next.add(6);
-        if (a > 22.5 && a < 157.5) next.add(5);
-        if (a < -22.5 && a > -157.5) next.add(4);
+      if (f > 0.3) {
+        const deg = Math.atan2(dy, dx) * 180 / Math.PI; // 0 = right, 90 = down
+        if (deg > -67.5 && deg < 67.5) next.add(7);
+        if (deg > 112.5 || deg < -112.5) next.add(6);
+        if (deg > 22.5 && deg < 157.5) next.add(5);
+        if (deg < -22.5 && deg > -157.5) next.add(4);
       }
       if ([...next].some((b) => !stickBtns.has(b))) navigator.vibrate?.(6);
       stickBtns = next; ax = ay = 0;
@@ -196,43 +219,29 @@
     markDirty();
   }
   function stickEnd() {
-    stickId = null;
-    base.classList.remove('active');
-    knob.style.transform = '';
     stickBtns.clear(); ax = ay = 0;
     markDirty();
   }
+  let resizeTimer = 0;
+  new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(makeStick, 150); }).observe(zone);
 
   const pad = $('#pad');
   pad.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (stickId === null && zone.contains(e.target) && !e.target.closest('[data-i]')) {
-      stickId = e.pointerId;
-      const zr = zone.getBoundingClientRect();
-      ox = e.clientX; oy = e.clientY;
-      base.style.left = (ox - zr.left) + 'px';
-      base.style.top = (oy - zr.top) + 'px';
-      base.classList.add('active');
-      stickMove(ox, oy);
-      return;
-    }
+    if (zone.contains(e.target)) return; // the stick's finger belongs to nipplejs
     fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     buttonsUpdate();
   });
   pad.addEventListener('pointermove', (e) => {
-    if (e.pointerId === stickId) return stickMove(e.clientX, e.clientY);
     if (fingers.has(e.pointerId)) { fingers.set(e.pointerId, { x: e.clientX, y: e.clientY }); buttonsUpdate(); }
   });
   for (const t of ['pointerup', 'pointercancel']) {
-    pad.addEventListener(t, (e) => {
-      if (e.pointerId === stickId) return stickEnd();
-      if (fingers.delete(e.pointerId)) buttonsUpdate();
-    });
+    pad.addEventListener(t, (e) => { if (fingers.delete(e.pointerId)) buttonsUpdate(); });
   }
   pad.addEventListener('contextmenu', (e) => e.preventDefault());
   // Release everything if the phone locks or the app is switched away.
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { fingers.clear(); stickEnd(); buttonsUpdate(); sendNow(); }
+    if (document.hidden) { fingers.clear(); makeStick(); stickEnd(); buttonsUpdate(); sendNow(); }
     else { keepAwake(); if (!conn?.open && room) connect(); }
   });
 
@@ -252,7 +261,8 @@
   // pad.html?demo=psp shows a system's layout without connecting (for checking layouts).
   const demo = new URLSearchParams(location.search).get('demo');
   build(demo && LAYOUTS[demo] ? demo : 'none');
+  makeStick();
   keepAwake();
-  if (demo) { cover.hidden = true; $('#who').textContent = 'Demo'; $('#game').textContent = demo; }
+  if (demo) { cover.hidden = true; $('#who').textContent = 'Demo'; $('#game').textContent = demo; window.padState = stateMsg; }
   else if (room) connect(); else askCode();
 })();

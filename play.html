@@ -5,23 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Retro</title>
   <meta name="theme-color" content="#000000">
+  <link rel="preload" href="fonts/jersey10-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="stylesheet" href="themes.css">
   <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
   <style>
     html, body { background: #000; overflow: hidden; }
     #game { position: fixed; inset: 0; }
     #back { left: calc(env(safe-area-inset-left) + 8px); right: auto; z-index: 10; background: rgba(0,0,0,.55); color: #fff; }
-    #link-btn { left: calc(env(safe-area-inset-left) + 60px); right: auto; z-index: 10; background: rgba(0,0,0,.55); color: #fff; }
+    #link-btn { left: calc(env(safe-area-inset-left) + 60px); right: auto; z-index: 10; background: rgba(0,0,0,.55); color: #fff;
+      font: 800 14px var(--font-ui); }
     #msg { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
       padding: 24px; color: var(--muted); z-index: 5; pointer-events: none; }
-    #msg a { color: #a5b4fc; pointer-events: auto; }
+    #msg { font: 400 21px var(--font-pixel); color: #ddd; }
+    #msg a { color: var(--accent); pointer-events: auto; }
   </style>
 </head>
 <body>
   <div id="game"></div>
   <div id="msg">Loading…</div>
   <button id="back" class="menu-btn" aria-label="Save and go back">←</button>
-  <button id="link-btn" class="menu-btn" aria-label="Phone controllers">📱</button>
+  <button id="link-btn" class="menu-btn" aria-label="Play with a friend" title="Play with a friend">2P</button>
   <script src="storage.js"></script>
   <script src="lib/peerjs.min.js"></script>
   <script src="lib/qrcode.js"></script>

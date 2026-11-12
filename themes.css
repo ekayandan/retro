@@ -1,0 +1,139 @@
+/* Color schemes, shared by the app (style.css), the player and the phone controller (pad.css).
+ * Pick one in Settings; it's kept in localStorage 'retro.theme', set as <html data-theme="…"> before
+ * the page paints, and sent to friends' controllers so everyone sees the same cabinet.
+ * A [data-theme] on any element re-colors just that element (the swatches in Settings use this). */
+/* Jersey 10 (SIL OFL, fonts/): pixel lettering whose C, B, 2, 3 and 5 stay readable at small sizes. */
+@font-face {
+  font-family: 'Jersey 10';
+  src: url(fonts/jersey10-latin.woff2) format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+:root {
+  --font-pixel: 'Jersey 10', ui-monospace, monospace;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --r: 4px; /* tight, chunky corners everywhere */
+  font-synthesis: none; /* the pixel font has one weight; a fake bold smears it */
+}
+
+/* Arcade (default): warm cabinet browns, cream text, arcade-button red, a lit amber marquee. */
+:root, [data-theme="arcade"] {
+  color-scheme: dark;
+  --bg: #17110d; --panel: #221912; --raised: #33261b; --raised-hi: #3f2f22; --raised-text: #f6e8cc; --line: #47362a;
+  --text: #f6e8cc; --muted: #b8a284; --accent: #ffb43c; --on-accent: #2a120a;
+  --primary: #e2412f; --primary-hi: #ff6047; --on-primary: #fff; --bezel: #0b0806; --backdrop: rgba(10,6,4,.72);
+  --p1: #e2412f; --on-p1: #fff; --p2: #2f7ce2; --on-p2: #fff; --p3: #34a853; --on-p3: #fff; --p4: #f2bb1d; --on-p4: #2a1a05;
+  --mq-1: #ffd27a; --mq-2: #ffab3a; --mq-3: #e5762a; --mq-4: #a8441e; --mq-border: #0b0806;
+  --mq-glow: rgba(255,160,50,.45); --mq-inner: rgba(255,240,200,.35);
+  --noart-1: #5a2a17; --noart-2: #2a1c13; --noart-text: #f6e8cc; --badge-bg: #0b0806; --badge-text: #ffb43c; --qr-bg: #fff6e2;
+  --mq-bg: initial; /* schemes can replace the marquee's glow with their own picture (see ZX Spectrum) */
+}
+
+/* Game Boy: the four greens of the original 1989 handheld's screen, with its magenta A/B buttons. */
+[data-theme="gameboy"] {
+  color-scheme: light;
+  --bg: #9bbc0f; --panel: #8bac0f; --raised: #306230; --raised-hi: #0f380f; --raised-text: #9bbc0f; --line: #306230;
+  --text: #0f380f; --muted: #24502a; --accent: #0f380f; --on-accent: #9bbc0f;
+  --primary: #9a2257; --primary-hi: #b4306e; --on-primary: #f6e4ec; --bezel: #0f380f; --backdrop: rgba(15,56,15,.6);
+  --p1: #9a2257; --on-p1: #f6e4ec; --p2: #0f380f; --on-p2: #9bbc0f; --p3: #306230; --on-p3: #9bbc0f; --p4: #c4cfa1; --on-p4: #0f380f;
+  --mq-1: #9bbc0f; --mq-2: #9bbc0f; --mq-3: #8bac0f; --mq-4: #8bac0f; --mq-border: #0f380f;
+  --mq-glow: rgba(15,56,15,.25); --mq-inner: rgba(255,255,255,.15);
+  --noart-1: #306230; --noart-2: #0f380f; --noart-text: #9bbc0f; --badge-bg: #0f380f; --badge-text: #9bbc0f; --qr-bg: #e8f4c0;
+}
+
+/* PICO-8: the fantasy console's fixed 16-color palette. */
+[data-theme="pico8"] {
+  color-scheme: dark;
+  --bg: #000000; --panel: #1d2b53; --raised: #5f574f; --raised-hi: #83769c; --raised-text: #fff1e8; --line: #5f574f;
+  --text: #fff1e8; --muted: #c2c3c7; --accent: #ffec27; --on-accent: #000000;
+  --primary: #ff004d; --primary-hi: #ff77a8; --on-primary: #fff1e8; --bezel: #000000; --backdrop: rgba(0,0,0,.72);
+  --p1: #ff004d; --on-p1: #fff1e8; --p2: #29adff; --on-p2: #1d2b53; --p3: #00e436; --on-p3: #000000; --p4: #ffec27; --on-p4: #000000;
+  --mq-1: #ffec27; --mq-2: #ffa300; --mq-3: #ff004d; --mq-4: #7e2553; --mq-border: #000000;
+  --mq-glow: rgba(255,0,77,.4); --mq-inner: rgba(255,241,232,.3);
+  --noart-1: #7e2553; --noart-2: #1d2b53; --noart-text: #fff1e8; --badge-bg: #000000; --badge-text: #ffec27; --qr-bg: #fff1e8;
+}
+
+/* Commodore 64: BASIC's blue screen and light-blue border, yellow for headings. */
+[data-theme="c64"] {
+  color-scheme: dark;
+  --bg: #352879; --panel: #40318d; --raised: #50459b; --raised-hi: #5f54ab; --raised-text: #ffffff; --line: #6c5eb5;
+  --text: #ffffff; --muted: #b3abf2; --accent: #c9d487; --on-accent: #352879;
+  --primary: #8c82ec; --primary-hi: #a69ef5; --on-primary: #1d1550; --bezel: #1d1550; --backdrop: rgba(29,21,80,.75);
+  --p1: #cb7e75; --on-p1: #1d1550; --p2: #8c82ec; --on-p2: #1d1550; --p3: #9ad284; --on-p3: #1d1550; --p4: #c9d487; --on-p4: #1d1550;
+  --mq-1: #4a3fa0; --mq-2: #40318d; --mq-3: #352879; --mq-4: #2b2068; --mq-border: #8c82ec;
+  --mq-glow: rgba(140,130,236,.35); --mq-inner: rgba(140,130,236,.25);
+  --noart-1: #50459b; --noart-2: #352879; --noart-text: #ffffff; --badge-bg: #1d1550; --badge-text: #c9d487; --qr-bg: #ffffff;
+}
+
+/* Phosphor: a green-screen terminal, one color in many brightnesses. */
+[data-theme="phosphor"] {
+  color-scheme: dark;
+  --bg: #050f07; --panel: #0a1c0e; --raised: #0f2e16; --raised-hi: #164220; --raised-text: #4dff7a; --line: #1f5a2b;
+  --text: #4dff7a; --muted: #2fb352; --accent: #8dffab; --on-accent: #031407;
+  --primary: #4dff7a; --primary-hi: #8dffab; --on-primary: #031407; --bezel: #000000; --backdrop: rgba(0,0,0,.75);
+  --p1: #4dff7a; --on-p1: #031407; --p2: #8dffab; --on-p2: #031407; --p3: #2fb352; --on-p3: #031407; --p4: #c8ffd6; --on-p4: #031407;
+  --mq-1: #0e3418; --mq-2: #0a2611; --mq-3: #061a0b; --mq-4: #031007; --mq-border: #1f5a2b;
+  --mq-glow: rgba(77,255,122,.25); --mq-inner: rgba(77,255,122,.15);
+  --noart-1: #0f2e16; --noart-2: #050f07; --noart-text: #4dff7a; --badge-bg: #000000; --badge-text: #4dff7a; --qr-bg: #e8ffee;
+}
+
+/* NES: the console's light and dark greys, black label and red lettering. */
+[data-theme="nes"] {
+  color-scheme: light;
+  --bg: #bcbcbc; --panel: #d8d8d8; --raised: #4c4c4c; --raised-hi: #2c2c2c; --raised-text: #fcfcfc; --line: #747474;
+  --text: #1c1c1c; --muted: #4c4c4c; --accent: #a80020; --on-accent: #fcfcfc;
+  --primary: #d82800; --primary-hi: #f83800; --on-primary: #fcfcfc; --bezel: #000000; --backdrop: rgba(0,0,0,.6);
+  --p1: #d82800; --on-p1: #fcfcfc; --p2: #0058f8; --on-p2: #fcfcfc; --p3: #00a800; --on-p3: #fcfcfc; --p4: #f8b800; --on-p4: #000000;
+  --mq-1: #fcfcfc; --mq-2: #e4e4e4; --mq-3: #bcbcbc; --mq-4: #a4a4a4; --mq-border: #000000;
+  --mq-glow: rgba(0,0,0,.2); --mq-inner: rgba(255,255,255,.4);
+  --noart-1: #4c4c4c; --noart-2: #1c1c1c; --noart-text: #fcfcfc; --badge-bg: #000000; --badge-text: #fcfcfc; --qr-bg: #fcfcfc;
+}
+
+/* ZX Spectrum: bright primaries on black, and the red-yellow-green-cyan stripe across the marquee. */
+[data-theme="zx"] {
+  color-scheme: dark;
+  --bg: #000000; --panel: #161616; --raised: #0000d7; --raised-hi: #0000ff; --raised-text: #ffffff; --line: #3a3a3a;
+  --text: #ffffff; --muted: #c0c0c0; --accent: #ffff00; --on-accent: #000000;
+  --primary: #d70000; --primary-hi: #ff0000; --on-primary: #ffffff; --bezel: #000000; --backdrop: rgba(0,0,0,.75);
+  --p1: #ff0000; --on-p1: #ffffff; --p2: #00ffff; --on-p2: #000000; --p3: #00ff00; --on-p3: #000000; --p4: #ffff00; --on-p4: #000000;
+  --mq-1: #000000; --mq-2: #000000; --mq-3: #000000; --mq-4: #000000; --mq-border: #3a3a3a;
+  --mq-glow: rgba(255,255,0,.15); --mq-inner: rgba(255,255,255,.05);
+  --mq-bg: linear-gradient(115deg, #000 0 58%, #d70000 58% 64%, #d7d700 64% 70%, #00d700 70% 76%, #00d7d7 76% 82%, #000 82%);
+  --noart-1: #0000d7; --noart-2: #000000; --noart-text: #ffffff; --badge-bg: #000000; --badge-text: #ffff00; --qr-bg: #ffffff;
+}
+
+/* CGA: the early PC's high-intensity palette 1, cyan, magenta and white on black. */
+[data-theme="cga"] {
+  color-scheme: dark;
+  --bg: #000000; --panel: #141414; --raised: #2e2e2e; --raised-hi: #444444; --raised-text: #ffffff; --line: #3c3c3c;
+  --text: #ffffff; --muted: #55ffff; --accent: #ff55ff; --on-accent: #000000;
+  --primary: #55ffff; --primary-hi: #aaffff; --on-primary: #000000; --bezel: #000000; --backdrop: rgba(0,0,0,.75);
+  --p1: #ff55ff; --on-p1: #000000; --p2: #55ffff; --on-p2: #000000; --p3: #ffffff; --on-p3: #000000; --p4: #aaaaaa; --on-p4: #000000;
+  --mq-1: #ffffff; --mq-2: #55ffff; --mq-3: #ff55ff; --mq-4: #000000; --mq-border: #000000;
+  --mq-glow: rgba(255,85,255,.35); --mq-inner: rgba(255,255,255,.2);
+  --noart-1: #00aaaa; --noart-2: #000000; --noart-text: #ffffff; --badge-bg: #000000; --badge-text: #ff55ff; --qr-bg: #ffffff;
+}
+
+/* DOS IDE: yellow text on blue, grey buttons, a green default button, like Turbo Pascal. */
+[data-theme="dos"] {
+  color-scheme: dark;
+  --bg: #0000aa; --panel: #000080; --raised: #aaaaaa; --raised-hi: #d0d0d0; --raised-text: #000000; --line: #5555ff;
+  --text: #ffff55; --muted: #aaaaaa; --accent: #55ffff; --on-accent: #0000aa;
+  --primary: #00aa00; --primary-hi: #55ff55; --on-primary: #000000; --bezel: #000000; --backdrop: rgba(0,0,40,.7);
+  --p1: #ff5555; --on-p1: #000000; --p2: #55ffff; --on-p2: #000000; --p3: #55ff55; --on-p3: #000000; --p4: #ffff55; --on-p4: #000000;
+  --mq-1: #5555ff; --mq-2: #0000aa; --mq-3: #0000aa; --mq-4: #000080; --mq-border: #aaaaaa;
+  --mq-glow: rgba(85,85,255,.35); --mq-inner: rgba(85,85,255,.25);
+  --noart-1: #00aaaa; --noart-2: #0000aa; --noart-text: #ffffff; --badge-bg: #aaaaaa; --badge-text: #000000; --qr-bg: #ffffff;
+}
+
+/* Amber: an amber-screen terminal, one color in many brightnesses. */
+[data-theme="amber"] {
+  color-scheme: dark;
+  --bg: #0d0700; --panel: #1a0f00; --raised: #2e1b00; --raised-hi: #3f2600; --raised-text: #ffb000; --line: #5a3800;
+  --text: #ffb000; --muted: #b87d00; --accent: #ffcc66; --on-accent: #1a0f00;
+  --primary: #ffb000; --primary-hi: #ffc94d; --on-primary: #1a0f00; --bezel: #000000; --backdrop: rgba(0,0,0,.75);
+  --p1: #ffb000; --on-p1: #1a0f00; --p2: #ffd27a; --on-p2: #1a0f00; --p3: #c78600; --on-p3: #1a0f00; --p4: #ffe8b8; --on-p4: #1a0f00;
+  --mq-1: #2e1d00; --mq-2: #221500; --mq-3: #160d00; --mq-4: #0d0700; --mq-border: #5a3800;
+  --mq-glow: rgba(255,176,0,.25); --mq-inner: rgba(255,176,0,.12);
+  --noart-1: #2e1b00; --noart-2: #0d0700; --noart-text: #ffb000; --badge-bg: #000000; --badge-text: #ffb000; --qr-bg: #fff4dd;
+}

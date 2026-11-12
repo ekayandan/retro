@@ -83,6 +83,12 @@
     held.set(p, want);
   }
   Link.onInput(applyPhone);
+  // A friend far away gets the picture and sound too: tap the sound before EmulatorJS makes it.
+  Link.tapAudio();
+  function shareScreen() {
+    const cv = window.EJS_emulator?.canvas || document.querySelector('#game canvas');
+    if (cv?.captureStream) Link.share({ video: cv.captureStream(60).getVideoTracks()[0] });
+  }
 
   // 5. Start EmulatorJS
   const resume = await Store.get('states', id + ':auto');
@@ -98,12 +104,12 @@
     EJS_CacheLimit: 0,          // we already keep the game; don't let EmulatorJS store a second copy
     EJS_threads: isPsp,
     EJS_disableAutoLang: false, // inverted flag in EmulatorJS: false = English UI, no translation download
-    EJS_color: '#6366f1',
+    EJS_color: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#e2412f',
     EJS_backgroundColor: '#000',
     EJS_startOnLoaded: true,
     EJS_Buttons: { netplay: false, exitEmulation: false, contextMenu: false },
     EJS_loadStateURL: resume ? new Blob([resume]) : undefined,
-    EJS_onGameStart: () => { msg(''); for (const [p, st] of latest) applyPhone(p, st); latest.clear(); },
+    EJS_onGameStart: () => { msg(''); for (const [p, st] of latest) applyPhone(p, st); latest.clear(); shareScreen(); },
   });
   msg('');
   const s = document.createElement('script');

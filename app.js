@@ -87,6 +87,7 @@ async function render() {
       cover.append(badge);
     }
     cover.onclick = () => play(g);
+    if (!grid.children.length) cover.dataset.navFirst = '';
     const row = document.createElement('div');
     row.className = 'row';
     const name = document.createElement('span');
@@ -372,9 +373,20 @@ function applyInput() {
 
 // Phone controllers (link.js) send RetroPad indices; NES has players 1 and 2.
 const RETROPAD_TO_NES = { 8: 0, 0: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7 };
-Link.onInput((p, { b }) => {
+Link.onInput((p, { b, x, y }) => {
+  if (!nes || !running) Nav.phone(p, b, x, y); // no game running: a phone drives the menus (nav.js)
   if (!input.phone[p]) return;
   input.phone[p] = new Set(b.map((i) => RETROPAD_TO_NES[i]).filter((x) => x !== undefined));
+});
+
+// Menus by gamepad or phone (nav.js). It moves focus, A clicks, B closes a dialog; these are the exceptions.
+Nav.onAction((action, el) => {
+  // Gamepad presses aren't "user activation", so the browser won't open the file picker from one.
+  if (action === 'accept' && el?.matches('label[for=file]') && !navigator.userActivation?.isActive) {
+    setStatus('A gamepad can\'t open the file picker. Click it, tap it or press Enter.');
+    return true;
+  }
+  return false;
 });
 $('#link-btn').onclick = () => Link.show();
 

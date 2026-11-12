@@ -11,6 +11,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 - **Box art**: downloaded once when online from [libretro-thumbnails](https://github.com/libretro-thumbnails), shrunk to a ~20 KB JPEG and kept on the device. Games without art retry weekly; ⋯ → *Find box art again*. Best match when files use official names, e.g. `Game Name (USA).nes`.
 - **Saves**: in-game battery saves are written as you play. Leaving the game (or switching apps) saves a resume point, so you continue exactly where you left off. One manual save-state slot in the ☰ menu.
 - **Controls**: touch pad (multi-touch, slide between buttons), keyboard (arrows/WASD, X/K = A, Z/J = B, Enter = Start, Shift = Select, Esc = menu), and any gamepad (Xbox/PS/Switch Pro, incl. TV boxes).
+- **Menus by controller**: with a gamepad, or a phone controller while no game is running, the d-pad/left stick moves between games and buttons, A (bottom button) selects, B closes a dialog. A ring and a button-hint bar show while you use it. A gamepad can't open the browser's file picker (browsers don't allow it), so *Insert game* still needs a click, tap or Enter.
 - **Play with a friend** (library, NES menu, or the *2P* button in game):
   - *Next to you*: scan the QR code with a phone and it becomes a controller: a floating joystick on the left (put your thumb anywhere; it follows your thumb), big buttons for the system on the right (the whole right side is live: the nearest button wins, and landing between two presses both). Each phone is the next player (up to 4; NES has 2).
   - *Far away*: *Send invite link* (share sheet on phones, copies the link on laptops). Your friend opens it on their phone and sees and hears the game in the middle of their controller, like a handheld, and plays as player 2 (you're player 1 at the computer). The picture and sound are the game's canvas and audio sent over WebRTC; *Screen* on the phone turns it on or off.
@@ -28,6 +29,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `pad.html`, `pad.js`, `pad.css` | the phone controller page, with the game's screen for friends far away (`pad.html?demo=psp` previews a system's layout) |
 | `themes.css`, `theme.js` | the color schemes, and the script that applies the saved one before the page paints |
 | `fonts/` | [Jersey 10](https://github.com/scfried/soft-type-jersey) (SIL OFL 1.1, see `fonts/OFL.txt`), the arcade lettering |
+| `nav.js` | menus by gamepad or phone controller: focus moves between buttons, A selects, B goes back (`node tools/test-nav.js`) |
 | `tilt.js` | tilt-to-joystick maths for the phone controller (no DOM; `node tools/test-tilt.js` checks it) |
 | `lib/peerjs.min.js` | [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT, see `lib/peerjs.LICENSE`) |
 | `lib/qrcode.js` | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT) |

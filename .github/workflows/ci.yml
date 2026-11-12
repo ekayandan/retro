@@ -10,3 +10,4 @@ jobs:
           node-version: 20
       - run: node tools/test-core.js
       - run: node tools/test-tilt.js
+      - run: node tools/test-nav.js

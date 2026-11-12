@@ -164,3 +164,16 @@ dialog[open] { animation: dlg-in .16s ease-out; }
 .link-actions { display: flex; gap: 8px; margin-top: 6px; }
 .link-actions .btn { flex: 1; }
 @media (max-width: 380px) { .link-near { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+
+/* ---------- Driving the menus by gamepad (nav.js) ---------- */
+/* The ring shows only while a pad is in use, not for mouse or touch. */
+.nav-active :focus { outline: 3px solid var(--accent); outline-offset: 3px; }
+.nav-active .cover:focus { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--accent), 0 12px 22px -8px rgba(0,0,0,.9); outline: 0; }
+.nav-active .theme:has(input:focus) { outline: 3px solid var(--accent); outline-offset: 3px; }
+.cover { scroll-margin: 84px 0 56px; }
+#nav-hints { position: fixed; inset: auto 0 0 0; width: auto; height: auto; margin: 0; border: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  display: flex; justify-content: center; gap: 22px; overflow: visible; pointer-events: none; color: var(--text);
+  background: linear-gradient(transparent, var(--bg) 70%); font: 400 20px/1 var(--font-pixel); }
+#nav-hints:not(:popover-open) { display: none; }
+#nav-hints kbd { display: inline-grid; place-items: center; min-width: 26px; height: 26px; margin-right: 6px; padding: 0 6px; border-radius: 50%;
+  background: var(--raised); color: var(--raised-text); font: 800 14px var(--font-ui); box-shadow: inset 0 -2px 0 rgba(0,0,0,.35); }

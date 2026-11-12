@@ -617,6 +617,11 @@ function navAct(a) {
   if (DIRS.includes(a)) return move(a);
   const el = document.activeElement;
   if (a === 'ok') {
+    // A gamepad or phone press isn't a user gesture, so browsers won't open the file picker for it.
+    if (el?.id === 'insert-btn' || el?.classList?.contains('add')) {
+      setStatus('To insert a game, click, tap or press Enter: browsers only open the file picker for those.');
+      return;
+    }
     if (el && el !== document.body && (dlg ? dlg.contains(el) : library.contains(el))) el.click();
     else move('right');
   }

@@ -98,16 +98,19 @@ function showHero(g) {
   if (art) backdrop.style.setProperty('--art', `url("${art}")`); else backdrop.style.removeProperty('--art');
 }
 
-// One selected tile: in the Tab order and lit (.sel); the rest are reachable with arrows.
-// data-zone says whether the shelf or the dock is selected (classes, not :focus, so the selection shows
-// even while the window itself isn't focused, e.g. a TV browser before the first key press).
+// One selected tile, lit with .sel. data-zone says whether the shelf or the dock is selected. Classes, not
+// :focus, so the selection shows even while the window itself isn't focused (a TV browser before the first
+// key press). data-focus is LRUD's memory of a container's last selected child (see "Home navigation"),
+// kept in sync here so a mouse hover or a re-render doesn't leave it stale.
 function rove(el) {
-  shelf.querySelectorAll('.cover').forEach((c) => { c.tabIndex = c === el ? 0 : -1; c.classList.toggle('sel', c === el); });
+  shelf.querySelectorAll('.cover').forEach((c) => c.classList.toggle('sel', c === el));
+  if (el?.id) shelf.dataset.focus = el.id;
   zone('shelf');
 }
 function zone(z, dockBtn) {
   library.dataset.zone = z;
   document.querySelectorAll('.dock-btn').forEach((b) => b.classList.toggle('sel', z === 'dock' && b === dockBtn));
+  if (dockBtn) dockBtn.parentElement.dataset.focus = dockBtn.id;
 }
 function focusedGame() {
   const id = document.activeElement?.closest?.('.card')?.dataset.id;
@@ -122,6 +125,7 @@ function tile(g) {
   card.setAttribute('role', 'listitem');
   const cover = document.createElement('button');
   cover.className = 'cover';
+  cover.id = 'tile-' + g.id; // LRUD remembers the last selected tile by id
   cover.setAttribute('aria-label', `${g.title}, ${SYSTEM_NAMES[g.system] || g.system}`);
   if (g.art === 'ok' && artUrls.has(g.id)) {
     const img = document.createElement('img');
@@ -144,7 +148,7 @@ function tile(g) {
   cover.onpointerenter = (e) => { if (e.pointerType === 'mouse' && !document.querySelector('dialog[open]')) cover.focus({ preventScroll: true }); };
   const more = document.createElement('button');
   more.className = 'more';
-  more.tabIndex = -1; // keyboard: O, gamepad: X
+  more.tabIndex = -1; // not an arrow stop (LRUD skips tabindex=-1); keyboard: O, gamepad: X
   more.textContent = '⋯';
   more.setAttribute('aria-label', 'Options for ' + g.title);
   more.onclick = () => openOpts(g);
@@ -158,6 +162,7 @@ function addTile() {
   card.setAttribute('role', 'listitem');
   const cover = document.createElement('button');
   cover.className = 'cover add';
+  cover.id = 'tile-add';
   cover.innerHTML = '<span class="plus" aria-hidden="true">+</span>Insert game';
   cover.onclick = () => $('#file').click();
   cover.onfocus = () => { rove(cover); showHero(null); };
@@ -537,10 +542,16 @@ function pollGamepad() {
 }
 
 // ---------- Home navigation: arrows, gamepads, friends' phones ----------
-// Left/right walk the shelf (or the dock), down/up switch between them. Enter / A plays, O / X opens the
-// game's options, Esc / B backs out of a dialog. Inside dialogs, up/down walk the buttons.
+// Where the selection goes is decided by BBC LRUD Spatial (lib/lrud.js, Apache-2.0): from where things
+// actually are on screen, it picks the nearest focusable in the pressed direction. The shelf and the dock
+// are LRUD containers (data-block-exit keeps left/right inside them); moving into one returns to its last
+// selected child. Inside a dialog, the dialog is the scope. Enter / A plays, O / X opens the game's
+// options, Esc / B backs out of a dialog.
+// lrud.js is an ES module, so a classic script loads it with import(); arrows wait the few ms until it's in.
+let getNextFocus = null;
+import('./lib/lrud.js').then((m) => { getNextFocus = m.getNextFocus; }).catch((err) => console.warn('lrud.js', err));
 const DIRS = ['up', 'down', 'left', 'right'];
-let dockIndex = 0;
+const ARROW = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 function focusTile(el) {
@@ -555,38 +566,21 @@ function focusTile(el) {
   const x = Math.min(Math.max(shelf.scrollLeft, max), min);
   if (x !== shelf.scrollLeft) shelf.scrollTo({ left: x, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
 }
-function focusables(root) {
-  return [...root.querySelectorAll('button, input, a[href]')].filter((el) => !el.disabled && el.offsetParent !== null && el.tabIndex >= 0);
-}
 function move(dir) {
+  if (!getNextFocus) return;
   const dlg = document.querySelector('dialog[open]');
-  if (dlg) {
-    const list = focusables(dlg), i = list.indexOf(document.activeElement);
-    const step = dir === 'up' || dir === 'left' ? -1 : 1;
-    list[Math.max(0, Math.min(list.length - 1, i < 0 ? 0 : i + step))]?.focus();
-    return;
-  }
-  if (library.hidden) return;
-  const tiles = [...shelf.querySelectorAll('.cover')], dock = [...document.querySelectorAll('.dock-btn')];
-  const a = document.activeElement, t = tiles.indexOf(a), d = dock.indexOf(a);
-  const selected = () => tiles.find((c) => c.tabIndex === 0) || tiles[0];
-  if (t >= 0) {
-    if (dir === 'left') focusTile(tiles[Math.max(0, t - 1)]);
-    if (dir === 'right') focusTile(tiles[Math.min(tiles.length - 1, t + 1)]);
-    if (dir === 'down') { dock[dockIndex]?.focus(); zone('dock', dock[dockIndex]); }
-  } else if (d >= 0) {
-    if (dir === 'left' || dir === 'right') {
-      dockIndex = Math.max(0, Math.min(dock.length - 1, d + (dir === 'right' ? 1 : -1)));
-      dock[dockIndex].focus();
-      zone('dock', dock[dockIndex]);
-    }
-    if (dir === 'up') focusTile(selected());
-  } else {
-    focusTile(selected()); // nothing selected yet: start on the shelf
-  }
+  if (!dlg && library.hidden) return; // a game is running
+  const scope = dlg || library, from = document.activeElement;
+  const next = from && from !== scope && scope.contains(from)
+    ? getNextFocus(from, ARROW[dir], scope)
+    : (!dlg && shelf.querySelector('.cover.sel')) || getNextFocus(null, null, scope); // nothing selected yet
+  if (!next) return; // edge of the screen, or a blocked exit
+  if (next.classList.contains('cover')) return focusTile(next);
+  next.focus();
+  if (next.classList.contains('dock-btn')) zone('dock', next);
 }
-document.querySelectorAll('.dock-btn').forEach((b, i) => {
-  b.addEventListener('focus', () => { dockIndex = i; zone('dock', b); });
+document.querySelectorAll('.dock-btn').forEach((b) => {
+  b.addEventListener('focus', () => zone('dock', b));
   b.addEventListener('blur', () => b.classList.remove('sel')); // e.g. Tab or a click elsewhere
 });
 

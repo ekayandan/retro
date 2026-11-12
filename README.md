@@ -31,6 +31,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `fonts/` | [Jersey 10](https://github.com/scfried/soft-type-jersey) (SIL OFL 1.1, see `fonts/OFL.txt`), the arcade lettering |
 | `lib/peerjs.min.js` | [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT, see `lib/peerjs.LICENSE`) |
 | `lib/qrcode.js` | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT) |
+| `lib/lrud.js` | [LRUD Spatial](https://github.com/bbc/lrud-spatial) 0.0.18 by the BBC: picks where the home screen's selection goes for arrows, gamepads and phones (Apache-2.0, see `lib/lrud.LICENSE`). An ES module, loaded with `import()` |
 | `lib/nipplejs.min.js` | [nipplejs](https://github.com/yoannmoinet/nipplejs) 1.0.4, the phone joystick (MIT, see `lib/nipplejs.LICENSE`) |
 | `ejs/` | [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) 4.2.3 with cores: gambatte, mGBA, Snes9x, Genesis Plus GX, Mednafen PCE, PCSX ReARMed, Mupen64Plus-Next, melonDS, PPSSPP (GPL-3.0) |
 | `lib/jsnes.min.js` | emulator core, [jsnes](https://github.com/bfirsh/jsnes) 2.1.0 (Apache-2.0, see `lib/jsnes.LICENSE`) |

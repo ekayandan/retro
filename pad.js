@@ -229,6 +229,8 @@
   let stick = null;
   function makeStick() {
     stick?.destroy();
+    stick = null;
+    if (steer === 'tilt') return; // the phone itself is the stick
     const size = Math.round(Math.max(90, Math.min(150, zone.clientHeight * 0.55, zone.clientWidth * 0.6)));
     stick = nipplejs.create({
       zone, mode: 'dynamic', size, follow: true, multitouch: false, maxNumberOfJoysticks: 1,
@@ -267,6 +269,109 @@
   let resizeTimer = 0;
   new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(makeStick, 150); }).observe(zone);
 
+  // ---------- Tilt steering: the phone is the stick (tilt.js does the maths) ----------
+  // The steer button switches the left side from the touch stick to tilting the phone. Tilt goes through the same
+  // output as the touch stick (d-pad directions or analog axes, per the Stick button). Recenter sets "straight".
+  const steerBtn = $('#steer'), tiltUi = $('#tiltUi'), tiltMsg = $('#tiltMsg'), tiltDot = $('#tiltDot');
+  const SENS = [['Low', 40], ['Medium', 28], ['High', 18]]; // degrees of tilt for a full push
+  let sensIdx = Math.max(0, Math.min(2, +(localStorage.getItem('retro.tilt.sens') ?? 1)));
+  let steer = 'touch', neutral = null, lastPose = null, tx = 0, ty = 0, gotTilt = false, flashTimer = 0;
+  const screenAngle = () => (((screen.orientation?.angle ?? window.orientation ?? 0) % 360) + 360) % 360;
+
+  function flash(msg) { // a short message in the top bar, then the game's name again
+    const g = $('#game');
+    g.textContent = msg;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { g.textContent = title || 'Picking a game…'; }, 4000);
+  }
+
+  function applyAxes(x, y) {
+    x = Math.round(x * 100) / 100; y = Math.round(y * 100) / 100;
+    if (stickMode === 'analog') {
+      if (x === ax && y === ay && !stickBtns.size) return;
+      ax = x; ay = y; stickBtns.clear();
+    } else {
+      const next = Tilt.dpad(x, y, stickBtns);
+      if (next.size === stickBtns.size && [...next].every((b) => stickBtns.has(b)) && !ax && !ay) return;
+      if ([...next].some((b) => !stickBtns.has(b))) navigator.vibrate?.(6);
+      stickBtns = next; ax = ay = 0;
+    }
+    markDirty();
+  }
+
+  function onTilt(e) {
+    if (e.beta == null || e.gamma == null) return;
+    gotTilt = true;
+    lastPose = Tilt.pose(e.beta, e.gamma, screenAngle());
+    neutral ||= lastPose; // however you're holding it when you start is "straight"
+    const a = Tilt.axes(lastPose, neutral, SENS[sensIdx][1]);
+    tx = Tilt.smooth(tx, a.x); ty = Tilt.smooth(ty, a.y);
+    tiltDot.style.setProperty('--tx', tx.toFixed(2));
+    tiltDot.style.setProperty('--ty', ty.toFixed(2));
+    applyAxes(tx, ty);
+  }
+  function recenter() {
+    neutral = lastPose; tx = ty = 0;
+    tiltDot.style.setProperty('--tx', 0); tiltDot.style.setProperty('--ty', 0);
+    applyAxes(0, 0);
+    navigator.vibrate?.(15);
+  }
+
+  function setSteer(mode) {
+    steer = mode;
+    const on = mode === 'tilt';
+    zone.classList.toggle('tilting', on);
+    tiltUi.hidden = !on;
+    steerBtn.textContent = 'Steer: ' + mode;
+    steerBtn.setAttribute('aria-pressed', on);
+    stickBtns.clear(); ax = ay = 0; tx = ty = 0; neutral = null;
+    if (on) window.addEventListener('deviceorientation', onTilt);
+    else window.removeEventListener('deviceorientation', onTilt);
+    makeStick();
+    markDirty();
+  }
+
+  // Asks for motion access where the phone needs it (iPhone: must come from a tap), then switches over.
+  async function enableTilt() {
+    const fail = (msg) => { setSteer('touch'); flash(msg); };
+    if (!('DeviceOrientationEvent' in window)) return fail('No tilt sensor on this device');
+    if (!window.isSecureContext) return fail('Tilt needs the https:// page');
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        if ((await DeviceOrientationEvent.requestPermission()) !== 'granted') {
+          return fail('Motion is off: Settings › Safari › Motion & Orientation Access');
+        }
+      } catch { return fail('Tap Steer again to allow motion'); }
+    }
+    gotTilt = false;
+    setSteer('tilt');
+    tiltMsg.textContent = 'Tilt the phone to steer';
+    tiltMsg.classList.remove('bad');
+    setTimeout(() => { if (steer === 'tilt' && !gotTilt) fail('No tilt sensor found'); }, 1500);
+  }
+
+  steerBtn.onclick = () => {
+    const next = steer === 'tilt' ? 'touch' : 'tilt';
+    localStorage.setItem('retro.steer', next);
+    if (next === 'tilt') enableTilt(); else setSteer('touch');
+  };
+  $('#recenter').onclick = recenter;
+  const paintSens = () => { $('#sens').textContent = 'Sens: ' + SENS[sensIdx][0]; };
+  $('#sens').onclick = () => {
+    sensIdx = (sensIdx + 1) % SENS.length;
+    localStorage.setItem('retro.tilt.sens', sensIdx);
+    paintSens();
+  };
+  paintSens();
+  // Holding the phone differently (turned it, picked it up) starts "straight" again.
+  screen.orientation?.addEventListener?.('change', () => setTimeout(() => { neutral = null; }, 300));
+  // Remembered choice: most phones can switch on at once; iPhone needs a tap first.
+  if (localStorage.getItem('retro.steer') === 'tilt') {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      document.addEventListener('pointerup', function once() { document.removeEventListener('pointerup', once); enableTilt(); });
+    } else enableTilt();
+  }
+
   const pad = $('#pad');
   pad.addEventListener('pointerdown', (e) => {
     e.preventDefault();
@@ -283,7 +388,7 @@
   pad.addEventListener('contextmenu', (e) => e.preventDefault());
   // Release everything if the phone locks or the app is switched away.
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { fingers.clear(); makeStick(); stickEnd(); buttonsUpdate(); sendNow(); }
+    if (document.hidden) { fingers.clear(); makeStick(); stickEnd(); buttonsUpdate(); sendNow(); neutral = null; tx = ty = 0; }
     else { keepAwake(); if (!conn?.open && room) connect(); }
   });
 

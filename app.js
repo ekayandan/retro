@@ -1,6 +1,6 @@
 /* Retro — emulator PWA. NES: jsnes (Apache-2.0). Other systems: EmulatorJS cores (GPL-3.0), see play.js. */
 const $ = (s) => document.querySelector(s);
-const library = $('#library'), player = $('#player'), grid = $('#grid');
+const library = $('#library'), player = $('#player'), shelf = $('#shelf');
 const menu = $('#menu'), opts = $('#opts');
 
 // ---------- Library ----------
@@ -57,49 +57,133 @@ async function addFile(file, system) {
   return true;
 }
 
-async function render() {
-  const games = (await Store.all('games')).sort((a, b) => (b.played - a.played) || (b.added - a.added));
-  $('#empty').hidden = games.length > 0;
-  grid.replaceChildren();
-  for (const g of games) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    const cover = document.createElement('button');
-    cover.className = 'cover';
-    cover.setAttribute('aria-label', 'Play ' + g.title);
-    if (g.art === 'ok') {
-      if (!artUrls.has(g.id)) {
-        const blob = await Store.get('art', g.id);
-        if (blob) artUrls.set(g.id, URL.createObjectURL(blob));
-      }
-      const img = document.createElement('img');
-      img.src = artUrls.get(g.id) || '';
-      img.alt = '';
-      cover.append(img);
-    } else {
-      cover.classList.add('noart');
-      cover.textContent = g.title;
-    }
-    if (g.system !== 'nes') {
-      const badge = document.createElement('span');
-      badge.className = 'badge';
-      badge.textContent = { gb: 'GB', gba: 'GBA', snes: 'SNES', segaMD: 'GENESIS', segaMS: 'SMS', segaGG: 'GG', pce: 'PCE', psx: 'PS1', n64: 'N64', nds: 'DS', psp: 'PSP' }[g.system] || g.system;
-      cover.append(badge);
-    }
-    cover.onclick = () => play(g);
-    const row = document.createElement('div');
-    row.className = 'row';
-    const name = document.createElement('span');
-    name.textContent = g.title;
-    const more = document.createElement('button');
-    more.className = 'more';
-    more.textContent = '⋯';
-    more.setAttribute('aria-label', 'Options');
-    more.onclick = () => { optsGame = g; $('#opts-title').textContent = g.title; disarm(); opts.showModal(); };
-    row.append(name, more);
-    card.append(cover, row);
-    grid.append(card);
+// ---------- Home: hero + shelf + dock ----------
+// The shelf is one row of tiles with a roving tabindex: only the selected tile is in the Tab order, arrows
+// move between tiles (see "Home navigation" below). The focused tile is the selected game; the hero shows it.
+const SYSTEM_NAMES = {
+  nes: 'NES', gb: 'Game Boy', gba: 'Game Boy Advance', snes: 'Super Nintendo', segaMD: 'Sega Genesis',
+  segaMS: 'Master System', segaGG: 'Game Gear', pce: 'PC Engine', psx: 'PlayStation', n64: 'Nintendo 64',
+  nds: 'Nintendo DS', psp: 'PSP',
+};
+const BADGES = { gb: 'GB', gba: 'GBA', snes: 'SNES', segaMD: 'GENESIS', segaMS: 'SMS', segaGG: 'GG', pce: 'PCE', psx: 'PS1', n64: 'N64', nds: 'DS', psp: 'PSP' };
+const SYSTEMS_LINE = 'NES · Game Boy · GBA · SNES · Genesis · Master System · Game Gear · PC Engine · PS1 · N64 · DS · PSP';
+let games = [];        // in shelf order: last played first
+let selectedId = null; // the game the hero shows; kept while focus is on the dock
+
+const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+function playedText(t) {
+  if (!t) return 'Not played yet';
+  const s = (Date.now() - t) / 1000;
+  for (const [unit, sec] of [['year', 31536e3], ['month', 2592e3], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]]) {
+    if (s >= sec) return 'Played ' + rtf.format(-Math.floor(s / sec), unit);
   }
+  return 'Played just now';
+}
+
+function showHero(g) {
+  const backdrop = $('#backdrop');
+  $('#steps').hidden = games.length > 0;
+  if (!g) {
+    $('#hero-sys').textContent = '';
+    $('#hero-title').textContent = 'Insert a game to start';
+    $('#hero-meta').textContent = SYSTEMS_LINE;
+    backdrop.style.removeProperty('--art');
+    return;
+  }
+  selectedId = g.id;
+  $('#hero-sys').textContent = SYSTEM_NAMES[g.system] || g.system;
+  $('#hero-title').textContent = g.title;
+  $('#hero-meta').textContent = playedText(g.played);
+  const art = artUrls.get(g.id);
+  if (art) backdrop.style.setProperty('--art', `url("${art}")`); else backdrop.style.removeProperty('--art');
+}
+
+// One selected tile: in the Tab order and lit (.sel); the rest are reachable with arrows.
+// data-zone says whether the shelf or the dock is selected (classes, not :focus, so the selection shows
+// even while the window itself isn't focused, e.g. a TV browser before the first key press).
+function rove(el) {
+  shelf.querySelectorAll('.cover').forEach((c) => { c.tabIndex = c === el ? 0 : -1; c.classList.toggle('sel', c === el); });
+  zone('shelf');
+}
+function zone(z, dockBtn) {
+  library.dataset.zone = z;
+  document.querySelectorAll('.dock-btn').forEach((b) => b.classList.toggle('sel', z === 'dock' && b === dockBtn));
+}
+function focusedGame() {
+  const id = document.activeElement?.closest?.('.card')?.dataset.id;
+  return games.find((g) => g.id === id);
+}
+function openOpts(g) { optsGame = g; $('#opts-title').textContent = g.title; disarm(); opts.showModal(); }
+
+function tile(g) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.id = g.id;
+  card.setAttribute('role', 'listitem');
+  const cover = document.createElement('button');
+  cover.className = 'cover';
+  cover.setAttribute('aria-label', `${g.title}, ${SYSTEM_NAMES[g.system] || g.system}`);
+  if (g.art === 'ok' && artUrls.has(g.id)) {
+    const img = document.createElement('img');
+    img.src = artUrls.get(g.id);
+    img.alt = '';
+    cover.append(img);
+  } else {
+    cover.classList.add('noart');
+    cover.textContent = g.title;
+  }
+  if (g.system !== 'nes') {
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = BADGES[g.system] || g.system;
+    cover.append(badge);
+  }
+  cover.onclick = () => play(g);
+  cover.onfocus = () => { rove(cover); showHero(g); };
+  // Mouse: hovering selects, like a TV home screen with a pointer
+  cover.onpointerenter = (e) => { if (e.pointerType === 'mouse' && !document.querySelector('dialog[open]')) cover.focus({ preventScroll: true }); };
+  const more = document.createElement('button');
+  more.className = 'more';
+  more.tabIndex = -1; // keyboard: O, gamepad: X
+  more.textContent = '⋯';
+  more.setAttribute('aria-label', 'Options for ' + g.title);
+  more.onclick = () => openOpts(g);
+  card.append(cover, more);
+  return card;
+}
+
+function addTile() {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.setAttribute('role', 'listitem');
+  const cover = document.createElement('button');
+  cover.className = 'cover add';
+  cover.innerHTML = '<span class="plus" aria-hidden="true">+</span>Insert game';
+  cover.onclick = () => $('#file').click();
+  cover.onfocus = () => { rove(cover); showHero(null); };
+  card.append(cover);
+  return card;
+}
+
+async function render() {
+  const a = document.activeElement;
+  const hadFocus = !a || a === document.body || shelf.contains(a); // otherwise focus is on the dock or in a dialog: leave it
+  const keepId = shelf.contains(a) ? a.closest('.card')?.dataset.id : null;
+  games = (await Store.all('games')).sort((x, y) => (y.played - x.played) || (y.added - x.added));
+  for (const g of games) {
+    if (g.art !== 'ok' || artUrls.has(g.id)) continue;
+    const blob = await Store.get('art', g.id);
+    if (blob) artUrls.set(g.id, URL.createObjectURL(blob));
+  }
+  shelf.replaceChildren(...games.map(tile));
+  if (!games.length) shelf.append(addTile());
+  const want = keepId || selectedId;
+  const target = (want && shelf.querySelector(`[data-id="${CSS.escape(want)}"] .cover`)) || shelf.querySelector('.cover');
+  rove(target);
+  if (hadFocus && !library.hidden) target.focus({ preventScroll: true });
+  // Fill the hero directly: focus events don't fire while the window itself isn't focused.
+  const shown = hadFocus ? target.closest('.card').dataset.id : selectedId;
+  showHero(games.find((g) => g.id === shown) || games[0] || null);
 }
 
 async function fetchMissingArt(force) {
@@ -372,17 +456,20 @@ function applyInput() {
 
 // Phone controllers (link.js) send RetroPad indices; NES has players 1 and 2.
 const RETROPAD_TO_NES = { 8: 0, 0: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7 };
-Link.onInput((p, { b }) => {
+Link.onInput((p, st) => {
+  phoneNav.set(p, st); // any phone can also drive the home screen (see "Home navigation")
   if (!input.phone[p]) return;
-  input.phone[p] = new Set(b.map((i) => RETROPAD_TO_NES[i]).filter((x) => x !== undefined));
+  input.phone[p] = new Set(st.b.map((i) => RETROPAD_TO_NES[i]).filter((x) => x !== undefined));
 });
 $('#link-btn').onclick = () => Link.show();
 
 // Settings: color scheme (theme.js). Changes show at once; friends' controllers follow.
 const settings = $('#settings');
 $('#settings-btn').onclick = () => {
-  settings.querySelector(`input[value="${Theme.get()}"]`).checked = true;
+  const current = settings.querySelector(`input[value="${Theme.get()}"]`);
+  current.checked = true;
   settings.showModal();
+  current.focus(); // start on the active scheme, so arrows move from there
 };
 settings.addEventListener('change', (e) => {
   if (e.target.name !== 'theme') return;
@@ -390,10 +477,7 @@ settings.addEventListener('change', (e) => {
   Link.resend();
 });
 settings.onclick = (e) => { if (e.target.dataset?.act === 'close' || e.target === settings) settings.close(); };
-// "Insert game" is a <label> for the hidden file input; make it work from the keyboard too.
-$('label[for=file]').onkeydown = (e) => {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#file').click(); }
-};
+$('#insert-btn').onclick = () => $('#file').click();
 
 const KEYS = {
   ArrowUp: 4, ArrowDown: 5, ArrowLeft: 6, ArrowRight: 7, KeyW: 4, KeyS: 5, KeyA: 6, KeyD: 7,
@@ -401,7 +485,8 @@ const KEYS = {
 };
 document.addEventListener('keydown', (e) => {
   if (player.hidden || menu.open) return;
-  if (e.code === 'Escape') { openMenu(); return; }
+  // preventDefault: otherwise this same Escape press also cancels the menu dialog that just opened
+  if (e.code === 'Escape') { e.preventDefault(); openMenu(); return; }
   if (e.code in KEYS) { input.kb.add(KEYS[e.code]); e.preventDefault(); }
 });
 document.addEventListener('keyup', (e) => { if (e.code in KEYS) input.kb.delete(KEYS[e.code]); });
@@ -450,6 +535,140 @@ function pollGamepad() {
   if (b(16)) { openMenu(); }
   input.pad = s;
 }
+
+// ---------- Home navigation: arrows, gamepads, friends' phones ----------
+// Left/right walk the shelf (or the dock), down/up switch between them. Enter / A plays, O / X opens the
+// game's options, Esc / B backs out of a dialog. Inside dialogs, up/down walk the buttons.
+const DIRS = ['up', 'down', 'left', 'right'];
+let dockIndex = 0;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+function focusTile(el) {
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  rove(el); // also done on focus, but focus events don't fire while the window isn't focused
+  const id = el.closest('.card').dataset.id;
+  showHero(id ? games.find((g) => g.id === id) : null);
+  // Scroll the shelf just enough to keep the selected tile (and its glow) inside the side margins.
+  const card = el.closest('.card'), pad = parseFloat(getComputedStyle(shelf).paddingLeft) || 24;
+  const min = card.offsetLeft - pad, max = card.offsetLeft + card.offsetWidth + pad - shelf.clientWidth;
+  const x = Math.min(Math.max(shelf.scrollLeft, max), min);
+  if (x !== shelf.scrollLeft) shelf.scrollTo({ left: x, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+}
+function focusables(root) {
+  return [...root.querySelectorAll('button, input, a[href]')].filter((el) => !el.disabled && el.offsetParent !== null && el.tabIndex >= 0);
+}
+function move(dir) {
+  const dlg = document.querySelector('dialog[open]');
+  if (dlg) {
+    const list = focusables(dlg), i = list.indexOf(document.activeElement);
+    const step = dir === 'up' || dir === 'left' ? -1 : 1;
+    list[Math.max(0, Math.min(list.length - 1, i < 0 ? 0 : i + step))]?.focus();
+    return;
+  }
+  if (library.hidden) return;
+  const tiles = [...shelf.querySelectorAll('.cover')], dock = [...document.querySelectorAll('.dock-btn')];
+  const a = document.activeElement, t = tiles.indexOf(a), d = dock.indexOf(a);
+  const selected = () => tiles.find((c) => c.tabIndex === 0) || tiles[0];
+  if (t >= 0) {
+    if (dir === 'left') focusTile(tiles[Math.max(0, t - 1)]);
+    if (dir === 'right') focusTile(tiles[Math.min(tiles.length - 1, t + 1)]);
+    if (dir === 'down') { dock[dockIndex]?.focus(); zone('dock', dock[dockIndex]); }
+  } else if (d >= 0) {
+    if (dir === 'left' || dir === 'right') {
+      dockIndex = Math.max(0, Math.min(dock.length - 1, d + (dir === 'right' ? 1 : -1)));
+      dock[dockIndex].focus();
+      zone('dock', dock[dockIndex]);
+    }
+    if (dir === 'up') focusTile(selected());
+  } else {
+    focusTile(selected()); // nothing selected yet: start on the shelf
+  }
+}
+document.querySelectorAll('.dock-btn').forEach((b, i) => {
+  b.addEventListener('focus', () => { dockIndex = i; zone('dock', b); });
+  b.addEventListener('blur', () => b.classList.remove('sel')); // e.g. Tab or a click elsewhere
+});
+
+function setInput(kind) { if (document.body.dataset.input !== kind) document.body.dataset.input = kind; }
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const dlg = document.querySelector('dialog[open]');
+  if (library.hidden && !dlg) return; // a game is running: its own keys apply
+  const dir = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key];
+  if (dir) {
+    setInput('kb');
+    if (dlg && document.activeElement?.type === 'radio') return; // radio groups have their own arrow keys
+    e.preventDefault();
+    move(dir);
+  } else if (!dlg && (e.key === 'o' || e.key === 'O' || e.key === 'ContextMenu')) {
+    const g = focusedGame();
+    if (g) { e.preventDefault(); openOpts(g); }
+  }
+});
+
+// Gamepads and phones: held directions repeat (like holding a key), buttons fire once per press.
+const phoneNav = new Map(); // player -> latest phone state {b: [RetroPad indices], x, y}
+const navHeld = new Map();  // 'source:action' -> time of the next repeat
+function navAct(a) {
+  const dlg = document.querySelector('dialog[open]');
+  if (DIRS.includes(a)) return move(a);
+  const el = document.activeElement;
+  if (a === 'ok') {
+    if (el && el !== document.body && (dlg ? dlg.contains(el) : library.contains(el))) el.click();
+    else move('right');
+  }
+  if (a === 'back' && dlg) {
+    if (dlg === menu) { menu.close(); go(); } else dlg.close();
+  }
+  if (a === 'opts' && !dlg) { const g = focusedGame(); if (g) openOpts(g); }
+}
+function navFrame(src, acts, now) {
+  for (const a of [...DIRS, 'ok', 'back', 'opts']) {
+    const k = src + ':' + a, next = navHeld.get(k);
+    if (!acts.has(a)) { navHeld.delete(k); continue; }
+    if (next === undefined) { navHeld.set(k, DIRS.includes(a) ? now + 380 : Infinity); setInput('pad'); navAct(a); }
+    else if (now >= next) { navHeld.set(k, now + 110); navAct(a); }
+  }
+}
+function navTick(now) {
+  requestAnimationFrame(navTick);
+  if (running || (library.hidden && !document.querySelector('dialog[open]'))) return; // a game owns the controls
+  for (const gp of navigator.getGamepads?.() || []) {
+    if (!gp?.connected) continue;
+    const b = (i) => gp.buttons[i]?.pressed, ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, acts = new Set();
+    if (b(12) || ay < -0.5) acts.add('up'); if (b(13) || ay > 0.5) acts.add('down');
+    if (b(14) || ax < -0.5) acts.add('left'); if (b(15) || ax > 0.5) acts.add('right');
+    if (b(0)) acts.add('ok'); if (b(1)) acts.add('back'); if (b(2) || b(3)) acts.add('opts');
+    navFrame('pad' + gp.index, acts, now);
+  }
+  // Phones send RetroPad indices: 4-7 d-pad, 8 A, 0 B, 9 X, 1 Y, 3 Start; x/y is the analog stick.
+  for (const [p, st] of phoneNav) {
+    const has = (i) => st.b.includes(i), acts = new Set();
+    if (has(4) || st.y < -0.5) acts.add('up'); if (has(5) || st.y > 0.5) acts.add('down');
+    if (has(6) || st.x < -0.5) acts.add('left'); if (has(7) || st.x > 0.5) acts.add('right');
+    if (has(8) || has(3)) acts.add('ok'); if (has(0)) acts.add('back'); if (has(9) || has(1)) acts.add('opts');
+    navFrame('phone' + p, acts, now);
+  }
+}
+requestAnimationFrame(navTick);
+window.addEventListener('gamepadconnected', () => setInput('pad'));
+
+// Top right: who's connected (like controller lights) and the time.
+Link.onChange(() => {
+  $('#players').replaceChildren(...Link.players().map((p) => {
+    const b = document.createElement('b'); b.dataset.p = p; b.textContent = p + 'P'; return b;
+  }));
+});
+function tickClock() {
+  const now = new Date(), clock = $('#clock');
+  clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  clock.dateTime = now.toISOString();
+}
+tickClock();
+setInterval(tickClock, 15000);
 
 // ---------- Boot ----------
 render().then(() => fetchMissingArt());

@@ -19,32 +19,51 @@
   <script src="theme.js"></script>
 </head>
 <body>
-  <!-- LIBRARY -->
-  <main id="library" class="screen">
+  <!-- HOME: a console-style home screen. One row of games (the shelf), a row of round system buttons
+       (the dock) under it; arrows, a gamepad or a friend's phone move the selection. See app.js "Home". -->
+  <main id="library" class="screen home">
+    <div id="backdrop" class="backdrop" aria-hidden="true"></div>
     <!-- The lit marquee. Blank until the product has its real name. -->
     <header class="marquee" aria-hidden="true"></header>
-    <nav class="controls">
-      <label class="btn primary" for="file" tabindex="0">Insert game</label>
-      <button id="link-btn" class="btn">Play with a friend</button>
-      <button id="settings-btn" class="btn icon" aria-label="Settings" title="Settings">
+    <div class="topline">
+      <span id="players" class="players" aria-label="Players connected"></span>
+      <time id="clock" class="clock"></time>
+    </div>
+
+    <section class="hero" aria-live="polite">
+      <p id="hero-sys" class="hero-sys"></p>
+      <h1 id="hero-title" class="hero-title"></h1>
+      <p id="hero-meta" class="hero-meta"></p>
+      <ol id="steps" class="steps" hidden>
+        <li><b>1</b> Insert a game: your own files or a .zip. They stay on this device.</li>
+        <li><b>2</b> Call a friend over, next to you or across the world.</li>
+        <li><b>3</b> Play. No accounts, nothing to install, works offline.</li>
+      </ol>
+    </section>
+
+    <div id="shelf" class="shelf" role="list" aria-label="Games"></div>
+
+    <nav class="dock" aria-label="System">
+      <button id="insert-btn" class="dock-btn">
+        <svg viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges" fill="currentColor">
+          <rect x="4" y="1" width="2" height="8"/><rect x="1" y="4" width="8" height="2"/></svg>
+        <span>Insert game</span></button>
+      <button id="link-btn" class="dock-btn">
+        <svg viewBox="0 -2 11 11" aria-hidden="true" shape-rendering="crispEdges" fill="currentColor"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="1" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="8" y="0" width="1" height="1"/><rect x="9" y="0" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="10" y="1" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/></svg>
+        <span>Play with a friend</span></button>
+      <button id="settings-btn" class="dock-btn">
         <svg viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges" fill="currentColor">
           <rect x="1" y="2" width="8" height="1"/><rect x="2" y="1" width="2" height="3"/>
-          <rect x="1" y="7" width="8" height="1"/><rect x="6" y="6" width="2" height="3"/>
-        </svg>
-      </button>
+          <rect x="1" y="7" width="8" height="1"/><rect x="6" y="6" width="2" height="3"/></svg>
+        <span>Settings</span></button>
       <input id="file" type="file" accept=".nes,.zip,.gb,.gbc,.gba,.sfc,.smc,.md,.gen,.smd,.sms,.gg,.pce,.z64,.n64,.v64,.nds,.chd,.iso,.cso,.pbp" multiple hidden>
     </nav>
-    <section id="empty" class="empty" hidden>
-      <h2>Insert a game to start</h2>
-      <ol class="steps">
-        <li><span class="n">1</span><div><b>Insert a game</b><span>Your own game files or a .zip. They stay on this device.</span></div></li>
-        <li><span class="n">2</span><div><b>Call a friend over</b><span>Next to you, or on the other side of the world.</span></div></li>
-        <li><span class="n">3</span><div><b>Play</b><span>No accounts, nothing to install. Works offline.</span></div></li>
-      </ol>
-      <p class="systems">NES · Game Boy · GBA · SNES · Genesis · Master System · Game Gear · PC Engine · PS1 · N64 · DS · PSP</p>
-    </section>
-    <div id="grid" class="grid"></div>
-    <footer id="status" class="status" role="status"></footer>
+
+    <footer class="hints">
+      <span id="status" class="status" role="status"></span>
+      <span class="keys keys-kb"><kbd>←</kbd><kbd>→</kbd> Choose <kbd>Enter</kbd> Play <kbd>O</kbd> Options</span>
+      <span class="keys keys-pad"><kbd class="b-a">A</kbd> Play <kbd class="b-x">X</kbd> Options <kbd class="b-b">B</kbd> Back</span>
+    </footer>
   </main>
 
   <!-- PLAYER -->

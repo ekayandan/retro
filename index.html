@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Retro</title>
   <meta name="description" content="Your retro games, with a friend — next to you or across the world. Nothing to install, no accounts, works offline.">
-  <meta name="theme-color" content="#17110d">
+  <meta name="theme-color" content="#17110d" data-themed>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,19 +13,25 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="preload" href="fonts/pixelify-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/jersey10-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="themes.css">
   <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
 </head>
 <body>
   <!-- LIBRARY -->
   <main id="library" class="screen">
-    <header class="marquee">
-      <h1 class="logo">RETRO</h1>
-      <p class="tagline">Sunday afternoon arcade</p>
-    </header>
+    <!-- The lit marquee. Blank until the product has its real name. -->
+    <header class="marquee" aria-hidden="true"></header>
     <nav class="controls">
       <label class="btn primary" for="file" tabindex="0">Insert game</label>
       <button id="link-btn" class="btn">Play with a friend</button>
+      <button id="settings-btn" class="btn icon" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges" fill="currentColor">
+          <rect x="1" y="2" width="8" height="1"/><rect x="2" y="1" width="2" height="3"/>
+          <rect x="1" y="7" width="8" height="1"/><rect x="6" y="6" width="2" height="3"/>
+        </svg>
+      </button>
       <input id="file" type="file" accept=".nes,.zip,.gb,.gbc,.gba,.sfc,.smc,.md,.gen,.smd,.sms,.gg,.pce,.z64,.n64,.v64,.nds,.chd,.iso,.cso,.pbp" multiple hidden>
     </nav>
     <section id="empty" class="empty" hidden>
@@ -68,6 +74,45 @@
     <button data-act="reset" class="btn">Restart game</button>
     <button data-act="mute" class="btn">Sound: on</button>
     <button data-act="quit" class="btn">Back to the games</button>
+  </dialog>
+
+  <!-- SETTINGS -->
+  <dialog id="settings" class="settings-dlg">
+    <h2>Settings</h2>
+    <fieldset class="themes">
+      <legend>Colors</legend>
+      <label class="theme"><input type="radio" name="theme" value="arcade">
+        <span class="sw" data-theme="arcade"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>Arcade</b><small>Warm cabinet wood, red buttons, a lit marquee</small></label>
+      <label class="theme"><input type="radio" name="theme" value="gameboy">
+        <span class="sw" data-theme="gameboy"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>Game Boy</b><small>The four greens of the 1989 handheld</small></label>
+      <label class="theme"><input type="radio" name="theme" value="nes">
+        <span class="sw" data-theme="nes"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>NES</b><small>The console’s greys, black and red</small></label>
+      <label class="theme"><input type="radio" name="theme" value="pico8">
+        <span class="sw" data-theme="pico8"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>PICO-8</b><small>The fantasy console’s 16-color palette</small></label>
+      <label class="theme"><input type="radio" name="theme" value="c64">
+        <span class="sw" data-theme="c64"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>Commodore 64</b><small>BASIC’s blue screen and light-blue border</small></label>
+      <label class="theme"><input type="radio" name="theme" value="zx">
+        <span class="sw" data-theme="zx"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>ZX Spectrum</b><small>Bright primaries and the rainbow stripe</small></label>
+      <label class="theme"><input type="radio" name="theme" value="cga">
+        <span class="sw" data-theme="cga"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>CGA</b><small>Cyan, magenta and white, like early PC games</small></label>
+      <label class="theme"><input type="radio" name="theme" value="dos">
+        <span class="sw" data-theme="dos"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>DOS IDE</b><small>Yellow on blue, like Turbo Pascal</small></label>
+      <label class="theme"><input type="radio" name="theme" value="phosphor">
+        <span class="sw" data-theme="phosphor"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>Phosphor</b><small>A green-screen terminal</small></label>
+      <label class="theme"><input type="radio" name="theme" value="amber">
+        <span class="sw" data-theme="amber"><i></i><i></i><i></i><i></i><i></i></span>
+        <b>Amber</b><small>An amber-screen terminal</small></label>
+    </fieldset>
+    <button data-act="close" class="btn">Done</button>
   </dialog>
 
   <!-- GAME OPTIONS -->

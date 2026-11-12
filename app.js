@@ -377,6 +377,19 @@ Link.onInput((p, { b }) => {
   input.phone[p] = new Set(b.map((i) => RETROPAD_TO_NES[i]).filter((x) => x !== undefined));
 });
 $('#link-btn').onclick = () => Link.show();
+
+// Settings: color scheme (theme.js). Changes show at once; friends' controllers follow.
+const settings = $('#settings');
+$('#settings-btn').onclick = () => {
+  settings.querySelector(`input[value="${Theme.get()}"]`).checked = true;
+  settings.showModal();
+};
+settings.addEventListener('change', (e) => {
+  if (e.target.name !== 'theme') return;
+  Theme.set(e.target.value);
+  Link.resend();
+});
+settings.onclick = (e) => { if (e.target.dataset?.act === 'close' || e.target === settings) settings.close(); };
 // "Insert game" is a <label> for the hidden file input; make it work from the keyboard too.
 $('label[for=file]').onkeydown = (e) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#file').click(); }

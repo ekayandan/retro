@@ -1,6 +1,6 @@
 # Retro
 
-A Sunday afternoon arcade: your retro games, with a friend next to you or on the other side of the world. Zero setup, zero server cost.
+An arcade cabinet in the browser: your retro games, with a friend next to you or on the other side of the world. Zero setup, zero server cost.
 
 Retro game emulators that run fully in the browser: NES, Game Boy / Color / Advance, SNES, Sega Genesis / Master System / Game Gear, PC Engine, PS1, N64, Nintendo DS, and PSP (laptop/desktop). Visit once, then it works offline (installable as an app).
 Bring your own game files — nothing is uploaded, there is no server of our own, no accounts, no tracking (playing with a friend uses a public server only to find each other, see below).
@@ -26,7 +26,8 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `play.html`, `play.js` | player page for every system except NES: loads the game from OPFS, starts EmulatorJS, saves a resume point |
 | `link.js` | computer side of *Play with a friend*: room id, QR code, invite link, player slots, passes button presses to the emulator, sends the screen to friends far away |
 | `pad.html`, `pad.js`, `pad.css` | the phone controller page, with the game's screen for friends far away (`pad.html?demo=psp` previews a system's layout) |
-| `fonts/` | [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) (SIL OFL 1.1, see `fonts/OFL.txt`), the arcade lettering |
+| `themes.css`, `theme.js` | the color schemes, and the script that applies the saved one before the page paints |
+| `fonts/` | [Jersey 10](https://github.com/scfried/soft-type-jersey) (SIL OFL 1.1, see `fonts/OFL.txt`), the arcade lettering |
 | `lib/peerjs.min.js` | [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT, see `lib/peerjs.LICENSE`) |
 | `lib/qrcode.js` | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT) |
 | `ejs/` | [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) 4.2.3 with cores: gambatte, mGBA, Snes9x, Genesis Plus GX, Mednafen PCE, PCSX ReARMed, Mupen64Plus-Next, melonDS, PPSSPP (GPL-3.0) |
@@ -47,7 +48,24 @@ To try phone controllers locally, open the computer's network address instead (e
 
 ## Look
 
-An arcade cabinet: warm browns, cream text, arcade-button red, and one lit marquee at the top of the library (the only animated "moment"; it stays still with *reduce motion*). Pixel lettering for headings and buttons; the plain system font for help text, game titles and numbers, because pixel digits like 2, 3 and 5 are easy to misread. Dialogs are native `<dialog>`s, so focus, Esc and the backdrop come from the browser.
+An arcade cabinet: one lit marquee at the top of the library, blank until the product has its real name (the only animated "moment"; it stays still with *reduce motion*), chunky buttons, tight corners. Pixel lettering (Jersey 10) for headings and buttons; the plain system font for help text and game titles. Dialogs are native `<dialog>`s, so focus, Esc and the backdrop come from the browser.
+
+**Colors** (the sliders button next to *Play with a friend*), ten 8-bit schemes from consoles, computers and terminals:
+
+| Scheme | From |
+|---|---|
+| Arcade (default) | warm cabinet wood, red buttons, an amber marquee |
+| Game Boy | the original handheld's four greens, with its magenta A/B buttons |
+| NES | the console's greys, black label and red lettering |
+| PICO-8 | the fantasy console's 16-color palette |
+| Commodore 64 | BASIC's blue screen and light-blue border |
+| ZX Spectrum | bright primaries on black, the rainbow stripe across the marquee |
+| CGA | the early PC's cyan, magenta and white on black |
+| DOS IDE | yellow on blue with grey buttons, like Turbo Pascal |
+| Phosphor | a green-screen terminal |
+| Amber | an amber-screen terminal |
+
+The choice is saved on the device and sent to friends' controllers, so everyone plays on the same cabinet. Add a scheme by copying a block in `themes.css` and listing it in `theme.js` and the Settings dialog in `index.html`.
 
 ## Notes
 

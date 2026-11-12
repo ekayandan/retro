@@ -88,6 +88,7 @@
         $('#who').textContent = 'Player ' + d.player;
         $('#who').dataset.p = d.player;
         title = d.title || '';
+        if (d.theme) Theme.set(d.theme); // same cabinet colors as the computer
         $('#game').textContent = title || 'Picking a game…';
         paintTv();
         if (d.system !== system || !layout) build(d.system);

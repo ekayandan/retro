@@ -4,14 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Retro controller</title>
-  <meta name="theme-color" content="#17110d">
+  <meta name="theme-color" content="#17110d" data-themed>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="preload" href="fonts/pixelify-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/jersey10-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="themes.css">
   <link rel="stylesheet" href="pad.css">
+  <script src="theme.js"></script>
 </head>
 <body>
   <header class="bar">
@@ -46,7 +48,6 @@
 
   <div id="cover" class="cover">
     <form id="join" hidden>
-      <h1>RETRO</h1>
       <p>Type the code from your friend's screen.</p>
       <input id="code" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="12" placeholder="abc234">
       <button class="chip big">Connect</button>

@@ -6,7 +6,7 @@
  * If a direct connection isn't possible, WebRTC falls back to PeerJS's free relay (TURN) servers.
  *
  * Messages, JSON:
- *   host → phone  {t:'hello', player, system, title}       on connect and whenever the game changes
+ *   host → phone  {t:'hello', player, system, title, theme} on connect, when the game or color scheme changes
  *   phone → host  {t:'in', b:[RetroPad indices], x, y}     full state on every change (+ keepalive)
  *   phone → host  {t:'watch', on}                          send me the screen (or stop)
  *   host → phone  media call, metadata {t:'screen'}        the game's video + audio
@@ -59,7 +59,8 @@ const Link = (() => {
   }
 
   function hello(conn) {
-    conn.send({ t: 'hello', player: players.get(conn), system, title });
+    // Theme is a top-level const (theme.js), so it's not on window.
+    conn.send({ t: 'hello', player: players.get(conn), system, title, theme: typeof Theme === 'object' ? Theme.get() : undefined });
   }
 
   function open() {
@@ -268,6 +269,7 @@ const Link = (() => {
     onInput(fn) { inputFn = fn; },
     onChange(fn) { listeners.add(fn); fn(); },
     count: () => players.size,
+    resend() { for (const c of players.keys()) if (c.open) hello(c); }, // e.g. the color scheme changed
     share,
     tapAudio,
     setSystem(s, t) {

@@ -104,7 +104,7 @@
     EJS_CacheLimit: 0,          // we already keep the game; don't let EmulatorJS store a second copy
     EJS_threads: isPsp,
     EJS_disableAutoLang: false, // inverted flag in EmulatorJS: false = English UI, no translation download
-    EJS_color: '#e2412f',
+    EJS_color: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#e2412f',
     EJS_backgroundColor: '#000',
     EJS_startOnLoaded: true,
     EJS_Buttons: { netplay: false, exitEmulation: false, contextMenu: false },

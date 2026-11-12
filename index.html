@@ -20,7 +20,10 @@
   <main id="library" class="screen">
     <header class="topbar">
       <h1>Retro</h1>
-      <label class="btn primary" for="file">+ Add games</label>
+      <span class="actions">
+        <button id="link-btn" class="btn" title="Use phones as controllers">📱<span class="lbl"> Controllers</span></button>
+        <label class="btn primary" for="file">+ Add games</label>
+      </span>
       <input id="file" type="file" accept=".nes,.zip,.gb,.gbc,.gba,.sfc,.smc,.md,.gen,.smd,.sms,.gg,.pce,.z64,.n64,.v64,.nds,.chd,.iso,.cso,.pbp" multiple hidden>
     </header>
     <p id="empty" class="empty" hidden>
@@ -56,6 +59,7 @@
     <button data-act="load" class="btn">Load state</button>
     <button data-act="reset" class="btn">Restart game</button>
     <button data-act="mute" class="btn">Sound: on</button>
+    <button data-act="link" class="btn">Phone controllers</button>
     <button data-act="quit" class="btn">Back to library</button>
   </dialog>
 
@@ -70,6 +74,9 @@
   <script src="lib/jsnes.min.js"></script>
   <script src="storage.js"></script>
   <script src="art.js"></script>
+  <script src="lib/peerjs.min.js"></script>
+  <script src="lib/qrcode.js"></script>
+  <script src="link.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

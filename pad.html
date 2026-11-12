@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Retro controller</title>
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="pad.css">
+</head>
+<body>
+  <header class="bar">
+    <span id="who" class="who">Connecting…</span>
+    <span id="game" class="game"></span>
+    <button id="mode" class="chip" hidden>Stick: analog</button>
+    <button id="full" class="chip" aria-label="Full screen">⛶</button>
+  </header>
+
+  <main id="pad" class="pad">
+    <section id="left" class="left">
+      <div id="shL" class="shoulders"></div>
+      <div id="stickZone" class="stick-zone">
+        <div id="base" class="base"><div id="knob" class="knob"></div></div>
+        <span class="hint">move</span>
+      </div>
+    </section>
+    <section class="center"><div id="mid" class="mid"></div></section>
+    <section id="right" class="right">
+      <div id="shR" class="shoulders"></div>
+      <div id="cpad" class="face cpad" hidden></div>
+      <div id="face" class="face"></div>
+    </section>
+  </main>
+
+  <div id="cover" class="cover">
+    <form id="join" hidden>
+      <h1>Retro controller</h1>
+      <p>Type the code shown on the computer.</p>
+      <input id="code" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="12" placeholder="abc234">
+      <button class="chip big">Connect</button>
+    </form>
+    <p id="coverMsg">Connecting…</p>
+  </div>
+
+  <script src="lib/peerjs.min.js"></script>
+  <script src="pad.js"></script>
+</body>
+</html>

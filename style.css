@@ -70,3 +70,16 @@ dialog { border: 0; border-radius: 16px; background: var(--panel); color: var(--
 dialog::backdrop { background: rgba(0,0,0,.6); }
 dialog h2 { margin: 0 0 12px; font-size: 18px; }
 dialog .btn { display: block; width: 100%; margin-top: 8px; }
+
+/* Phone controllers dialog (link.js) */
+.topbar .actions { display: flex; gap: 8px; }
+.link-dlg { width: min(360px, 92vw); text-align: center; }
+.link-help { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+.link-qr { background: #fff; border-radius: 12px; padding: 8px; width: 220px; height: 220px; margin: 0 auto; }
+.link-qr svg { width: 100%; height: 100%; display: block; }
+.link-url { display: block; margin-top: 10px; color: #a5b4fc; font-size: 13px; word-break: break-all; }
+.link-warn { color: #fbbf24; font-size: 13px; margin: 10px 0 0; }
+.link-list { list-style: none; padding: 0; margin: 12px 0 0; }
+.link-list li { padding: 6px; border-radius: 8px; background: var(--btn); margin-top: 6px; font-size: 14px; }
+.link-state { color: var(--muted); font-size: 13px; min-height: 1.4em; margin: 10px 0 0; }
+@media (max-width: 420px) { .topbar .lbl { display: none; } }

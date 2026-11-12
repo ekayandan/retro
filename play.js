@@ -63,7 +63,28 @@
   document.addEventListener('keydown', (e) => { if (e.code === 'Escape' && e.shiftKey) leave(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && !leaving) saveResume(); });
 
-  // 4. Start EmulatorJS
+  // 4. Phone controllers (link.js): phone N is player N. Buttons are RetroPad indices, which is what
+  //    EmulatorJS's simulateInput takes; the analog stick is split into its four half-axes (16-19).
+  Link.setSystem(game.system, game.title);
+  document.querySelector('#link-btn').onclick = () => Link.show();
+  const held = new Map(); // player -> Map(index -> value) currently applied
+  const latest = new Map();
+  function applyPhone(p, st) {
+    const gm = window.EJS_emulator?.started && window.EJS_emulator.gameManager;
+    if (!gm) { latest.set(p, st); return; } // applied once the game starts
+    const want = new Map();
+    for (const i of st.b) if (Number.isInteger(i) && i >= 0 && i <= 23) want.set(i, i >= 16 ? 0x7fff : 1);
+    const ax = (v) => Math.round(Math.max(0, Math.min(1, v)) * 0x7fff);
+    if (st.x > 0) want.set(16, ax(st.x)); else if (st.x < 0) want.set(17, ax(-st.x));
+    if (st.y > 0) want.set(18, ax(st.y)); else if (st.y < 0) want.set(19, ax(-st.y));
+    const had = held.get(p) || new Map();
+    for (const [i] of had) if (!want.has(i)) gm.simulateInput(p - 1, i, 0);
+    for (const [i, v] of want) if (had.get(i) !== v) gm.simulateInput(p - 1, i, v);
+    held.set(p, want);
+  }
+  Link.onInput(applyPhone);
+
+  // 5. Start EmulatorJS
   const resume = await Store.get('states', id + ':auto');
   Object.assign(window, {
     EJS_player: '#game',
@@ -82,7 +103,7 @@
     EJS_startOnLoaded: true,
     EJS_Buttons: { netplay: false, exitEmulation: false, contextMenu: false },
     EJS_loadStateURL: resume ? new Blob([resume]) : undefined,
-    EJS_onGameStart: () => msg(''),
+    EJS_onGameStart: () => { msg(''); for (const [p, st] of latest) applyPhone(p, st); latest.clear(); },
   });
   msg('');
   const s = document.createElement('script');

@@ -11,6 +11,7 @@
     html, body { background: #000; overflow: hidden; }
     #game { position: fixed; inset: 0; }
     #back { left: calc(env(safe-area-inset-left) + 8px); right: auto; z-index: 10; background: rgba(0,0,0,.55); color: #fff; }
+    #link-btn { left: calc(env(safe-area-inset-left) + 60px); right: auto; z-index: 10; background: rgba(0,0,0,.55); color: #fff; }
     #msg { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
       padding: 24px; color: var(--muted); z-index: 5; pointer-events: none; }
     #msg a { color: #a5b4fc; pointer-events: auto; }
@@ -20,7 +21,11 @@
   <div id="game"></div>
   <div id="msg">Loading…</div>
   <button id="back" class="menu-btn" aria-label="Save and go back">←</button>
+  <button id="link-btn" class="menu-btn" aria-label="Phone controllers">📱</button>
   <script src="storage.js"></script>
+  <script src="lib/peerjs.min.js"></script>
+  <script src="lib/qrcode.js"></script>
+  <script src="link.js"></script>
   <script src="play.js"></script>
 </body>
 </html>

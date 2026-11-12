@@ -280,6 +280,7 @@ async function play(game) {
   library.hidden = true; player.hidden = false;
   clearInterval(sramTimer);
   sramTimer = setInterval(saveSram, 2000);
+  Link.setSystem('nes', game.title);
   go();
 }
 
@@ -288,7 +289,8 @@ async function quit() {
   clearInterval(sramTimer);
   await saveAll();
   nes = null; current = null;
-  input.kb.clear(); input.touch.clear(); input.pad.clear(); applied.clear();
+  input.kb.clear(); input.touch.clear(); input.pad.clear(); applied.clear(); applied2.clear();
+  Link.setSystem(null);
   player.hidden = true; library.hidden = false;
   render();
 }
@@ -324,6 +326,7 @@ menu.onclick = async (e) => {
     if (sram) nes.cpu.mem.set(sram, 0x6000);
   }
   if (act === 'quit') return quit();
+  if (act === 'link') return Link.show(go);
   go();
 };
 menu.addEventListener('cancel', (e) => { e.preventDefault(); menu.close(); go(); });
@@ -335,15 +338,26 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => { saveAll(); });
 
-// ---------- Input (keyboard + touch + gamepad, merged) ----------
+// ---------- Input (keyboard + touch + gamepad + phones, merged) ----------
 // jsnes buttons: 0 A, 1 B, 2 Select, 3 Start, 4 Up, 5 Down, 6 Left, 7 Right
-const input = { kb: new Set(), touch: new Set(), pad: new Set() };
-const applied = new Set();
-function applyInput() {
-  const want = new Set([...input.kb, ...input.touch, ...input.pad]);
-  for (const b of applied) if (!want.has(b)) { nes.buttonUp(1, b); applied.delete(b); }
-  for (const b of want) if (!applied.has(b)) { nes.buttonDown(1, b); applied.add(b); }
+const input = { kb: new Set(), touch: new Set(), pad: new Set(), phone: [null, new Set(), new Set()] };
+const applied = new Set(), applied2 = new Set();
+function applyTo(n, want, done) {
+  for (const b of done) if (!want.has(b)) { nes.buttonUp(n, b); done.delete(b); }
+  for (const b of want) if (!done.has(b)) { nes.buttonDown(n, b); done.add(b); }
 }
+function applyInput() {
+  applyTo(1, new Set([...input.kb, ...input.touch, ...input.pad, ...input.phone[1]]), applied);
+  applyTo(2, input.phone[2], applied2);
+}
+
+// Phone controllers (link.js) send RetroPad indices; NES has players 1 and 2.
+const RETROPAD_TO_NES = { 8: 0, 0: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7 };
+Link.onInput((p, { b }) => {
+  if (!input.phone[p]) return;
+  input.phone[p] = new Set(b.map((i) => RETROPAD_TO_NES[i]).filter((x) => x !== undefined));
+});
+$('#link-btn').onclick = () => Link.show();
 
 const KEYS = {
   ArrowUp: 4, ArrowDown: 5, ArrowLeft: 6, ArrowRight: 7, KeyW: 4, KeyS: 5, KeyA: 6, KeyD: 7,

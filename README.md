@@ -12,7 +12,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 - **Saves**: in-game battery saves are written as you play. Leaving the game (or switching apps) saves a resume point, so you continue exactly where you left off. One manual save-state slot in the ☰ menu.
 - **Controls**: touch pad (multi-touch, slide between buttons), keyboard (arrows/WASD, X/K = A, Z/J = B, Enter = Start, Shift = Select, Esc = menu), and any gamepad (Xbox/PS/Switch Pro, incl. TV boxes).
 - **Play with a friend** (library, NES menu, or the *2P* button in game):
-  - *Next to you*: scan the QR code with a phone and it becomes a controller: joystick on the left, buttons for the system on the right. Each phone is the next player (up to 4; NES has 2).
+  - *Next to you*: scan the QR code with a phone and it becomes a controller: a floating joystick on the left (put your thumb anywhere; it follows your thumb), big buttons for the system on the right (the whole right side is live: the nearest button wins, and landing between two presses both). Each phone is the next player (up to 4; NES has 2).
   - *Far away*: *Send invite link* (share sheet on phones, copies the link on laptops). Your friend opens it on their phone and sees and hears the game in the middle of their controller, like a handheld, and plays as player 2 (you're player 1 at the computer). The picture and sound are the game's canvas and audio sent over WebRTC; *Screen* on the phone turns it on or off.
   - Phones connect straight to the computer over WebRTC; only the first handshake goes through the free public [PeerJS](https://peerjs.com) server, so connecting needs internet for a moment. When two networks can't connect directly, WebRTC falls back to PeerJS's free relay (TURN) servers. Still no server of our own. The phone keeps its player number and reconnects by itself when you switch games. N64, PS1 and PSP have a *Stick: analog / d-pad* switch.
 
@@ -30,6 +30,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `fonts/` | [Jersey 10](https://github.com/scfried/soft-type-jersey) (SIL OFL 1.1, see `fonts/OFL.txt`), the arcade lettering |
 | `lib/peerjs.min.js` | [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT, see `lib/peerjs.LICENSE`) |
 | `lib/qrcode.js` | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT) |
+| `lib/nipplejs.min.js` | [nipplejs](https://github.com/yoannmoinet/nipplejs) 1.0.4, the phone joystick (MIT, see `lib/nipplejs.LICENSE`) |
 | `ejs/` | [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) 4.2.3 with cores: gambatte, mGBA, Snes9x, Genesis Plus GX, Mednafen PCE, PCSX ReARMed, Mupen64Plus-Next, melonDS, PPSSPP (GPL-3.0) |
 | `lib/jsnes.min.js` | emulator core, [jsnes](https://github.com/bfirsh/jsnes) 2.1.0 (Apache-2.0, see `lib/jsnes.LICENSE`) |
 | `sw.js` | offline cache, plus the cross-origin isolation headers PSP threads need (GitHub Pages can't send them). **Bump `VERSION` on every change** so phones update |

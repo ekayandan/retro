@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Retro — PSP</title>
+  <title>Retro</title>
   <meta name="theme-color" content="#000000">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
   <link rel="stylesheet" href="style.css">
   <style>
     html, body { background: #000; overflow: hidden; }
     #game { position: fixed; inset: 0; }
-    #back { left: calc(env(safe-area-inset-left) + 8px); right: auto; z-index: 10; }
+    #back { left: calc(env(safe-area-inset-left) + 8px); right: auto; z-index: 10; background: rgba(0,0,0,.55); color: #fff; }
     #msg { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
       padding: 24px; color: var(--muted); z-index: 5; pointer-events: none; }
     #msg a { color: #a5b4fc; pointer-events: auto; }
@@ -21,6 +21,6 @@
   <div id="msg">Loading…</div>
   <button id="back" class="menu-btn" aria-label="Save and go back">←</button>
   <script src="storage.js"></script>
-  <script src="psp.js"></script>
+  <script src="play.js"></script>
 </body>
 </html>

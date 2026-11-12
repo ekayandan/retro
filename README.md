@@ -1,9 +1,10 @@
 # Retro
 
-NES and PSP emulators that run fully in the browser. Visit once, then it works offline (installable as an app).
+Retro game emulators that run fully in the browser: NES, Game Boy / Color / Advance, SNES, Sega Genesis, and PSP (laptop/desktop). Visit once, then it works offline (installable as an app).
 Bring your own game files — nothing is uploaded, there is no server, no accounts, no tracking.
 
-- **Add games**: pick `.nes`/`.zip` (NES) or `.iso`/`.cso`/`.pbp` (PSP) files from the device (several at once). Duplicates are skipped.
+- **Add games**: pick game files or `.zip`s from the device (several at once): `.nes`, `.gb`/`.gbc`, `.gba`, `.sfc`/`.smc`, `.md`/`.gen`/`.smd`, `.iso`/`.cso`/`.pbp`. Duplicates are skipped.
+- **Game Boy, GBA, SNES, Genesis** run on phones too (iPhone included), with EmulatorJS's touch gamepad, keyboard or gamepad. Each core is ~1 MB and downloads the first time you play that system.
 - **PSP** (laptop/desktop, recent Chrome, Edge or Firefox): games up to ~2 GB are copied into the browser's private file system (OPFS) as a stream. The PSP runtime (~16 MB) downloads the first time you open a PSP game, then works offline. Keyboard and gamepad controls come from EmulatorJS (its settings menu lets you remap them). ← saves and returns to the library.
 - **Box art**: downloaded once when online from [libretro-thumbnails](https://github.com/libretro-thumbnails), shrunk to a ~20 KB JPEG and kept on the device. Games without art retry weekly; ⋯ → *Find box art again*. Best match when files use official names, e.g. `Game Name (USA).nes`.
 - **Saves**: in-game battery saves are written as you play. Leaving the game (or switching apps) saves a resume point, so you continue exactly where you left off. One manual save-state slot in the ☰ menu.
@@ -16,8 +17,8 @@ Bring your own game files — nothing is uploaded, there is no server, no accoun
 | `index.html`, `style.css`, `app.js` | the app: library, player, input, audio |
 | `storage.js` | IndexedDB wrapper + tiny `.zip` reader (works in Node too) |
 | `art.js` | box-art lookup and caching |
-| `psp.html`, `psp.js` | PSP player page: loads the game from OPFS, starts EmulatorJS, saves a resume point |
-| `ejs/` | [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) 4.2.3 with the PPSSPP core (GPL-3.0) |
+| `play.html`, `play.js` | player page for every system except NES: loads the game from OPFS, starts EmulatorJS, saves a resume point |
+| `ejs/` | [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) 4.2.3 with cores: gambatte (GB/GBC), mGBA, Snes9x, Genesis Plus GX, PPSSPP (GPL-3.0) |
 | `lib/jsnes.min.js` | emulator core, [jsnes](https://github.com/bfirsh/jsnes) 2.1.0 (Apache-2.0, see `lib/jsnes.LICENSE`) |
 | `sw.js` | offline cache, plus the cross-origin isolation headers PSP threads need (GitHub Pages can't send them). **Bump `VERSION` on every change** so phones update |
 | `tools/test-core.js` | `node tools/test-core.js` checks core, battery saves, save states, zip (runs in CI) |
@@ -42,4 +43,4 @@ Open http://localhost:8742. Offline mode needs `localhost` or HTTPS.
 
 ## License
 
-GPL-3.0 (see `LICENSE`), because the PSP emulator is GPL. jsnes stays Apache-2.0 (`lib/jsnes.LICENSE`).
+GPL-3.0 (see `LICENSE`), because EmulatorJS and its cores are GPL. jsnes stays Apache-2.0 (`lib/jsnes.LICENSE`).

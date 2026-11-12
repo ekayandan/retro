@@ -4,6 +4,11 @@ const Art = (() => {
   const REPO = {
     nes: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Nintendo_Entertainment_System/master/',
     psp: 'https://raw.githubusercontent.com/libretro-thumbnails/Sony_-_PlayStation_Portable/master/',
+    gb: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy/master/',
+    gbc: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy_Color/master/',
+    gba: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance/master/',
+    snes: 'https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Super_Nintendo_Entertainment_System/master/',
+    segaMD: 'https://raw.githubusercontent.com/libretro-thumbnails/Sega_-_Mega_Drive_-_Genesis/master/',
   };
   const KINDS = ['Named_Boxarts', 'Named_Titles'];
   const REGION = { U: 'USA', E: 'Europe', J: 'Japan', W: 'World', UE: 'USA, Europe', JU: 'Japan, USA' };
@@ -47,7 +52,7 @@ const Art = (() => {
   }
 
   async function find(game) {
-    const base = REPO[game.system];
+    const base = REPO[/\.gbc$/i.test(game.name) ? 'gbc' : game.system];
     if (!base) return null;
     for (const kind of KINDS) {
       for (const name of candidates(game.name)) {

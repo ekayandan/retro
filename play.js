@@ -1,4 +1,5 @@
-/* PSP player page. Runs PPSSPP through EmulatorJS (GPL-3.0, files in ejs/).
+/* Player page for every system except NES. Runs EmulatorJS cores (GPL-3.0, files in ejs/):
+ *   gb: gambatte (Game Boy / Color), gba: mGBA, snes: Snes9x, segaMD: Genesis Plus GX, psp: PPSSPP.
  * - The game file comes from the browser's private file system (see Files in storage.js).
  * - In-game saves (memory stick) are kept by EmulatorJS in its own IndexedDB (IDBFS at /data/saves).
  * - A resume point is saved to our 'states' store when leaving, and loaded on the next start.
@@ -8,9 +9,13 @@
   const msg = (html) => { document.querySelector('#msg').innerHTML = html; };
   const home = () => { location.href = './'; };
 
-  // 1. Cross-origin isolation (needed for threads). On the very first visit the service worker
-  //    isn't controlling the page yet, so reload once after it is.
-  if (!window.crossOriginIsolated) {
+  const game = await Store.get('games', id);
+  if (!game || game.system === 'nes') return home();
+  const isPsp = game.system === 'psp';
+
+  // 1. PSP only: cross-origin isolation (needed for threads). On the very first visit the service
+  //    worker isn't controlling the page yet, so reload once after it is.
+  if (isPsp && !window.crossOriginIsolated) {
     if ('serviceWorker' in navigator && !sessionStorage.getItem('retro.coi')) {
       sessionStorage.setItem('retro.coi', '1');
       await navigator.serviceWorker.register('sw.js');
@@ -22,14 +27,12 @@
     return;
   }
   sessionStorage.removeItem('retro.coi');
-  if (!document.createElement('canvas').getContext('webgl2')) {
+  if (isPsp && !document.createElement('canvas').getContext('webgl2')) {
     msg('PSP games need WebGL 2 graphics, which this browser or device doesn\'t offer.<br><br><a href="./">Back</a>');
     return;
   }
 
   // 2. The game
-  const game = await Store.get('games', id);
-  if (!game || game.system !== 'psp') return home();
   document.title = game.title + ' — Retro';
   const file = await Files.read(id, game.name);
   if (!file) { msg('The game file is missing. Add it again from the library.<br><br><a href="./">Back</a>'); return; }
@@ -63,12 +66,12 @@
   const resume = await Store.get('states', id + ':auto');
   Object.assign(window, {
     EJS_player: '#game',
-    EJS_core: 'psp',
+    EJS_core: game.system,
     EJS_pathtodata: 'ejs/',
     EJS_gameUrl: file,
     EJS_gameName: id,           // stable name for EmulatorJS's own save files
     EJS_CacheLimit: 0,          // we already keep the game; don't let EmulatorJS store a second copy
-    EJS_threads: true,
+    EJS_threads: isPsp,
     EJS_disableAutoLang: false, // inverted flag in EmulatorJS: false = English UI, no translation download
     EJS_color: '#6366f1',
     EJS_backgroundColor: '#000',

@@ -1,12 +1,12 @@
 // Offline cache for the app itself. Games, saves and box art live in IndexedDB / OPFS, not here.
 // Bump VERSION whenever any file changes so phones pick up the update.
-const VERSION = 'retro-v2';
+const VERSION = 'retro-v3';
 const FILES = [
   './', 'index.html', 'style.css', 'app.js', 'storage.js', 'art.js', 'lib/jsnes.min.js', 'manifest.webmanifest',
-  'psp.html', 'psp.js',
+  'play.html', 'play.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
 ];
-// The PSP runtime (~16 MB) is cached the first time a PSP game is opened, not on install.
+// EmulatorJS and its cores are cached the first time a game for that system is opened, not on install.
 const LAZY = /\/ejs\//;
 
 self.addEventListener('install', (e) => {

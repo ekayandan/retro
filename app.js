@@ -1,4 +1,4 @@
-/* Retro — emulator PWA. NES: jsnes (Apache-2.0). PSP: EmulatorJS + PPSSPP (GPL-3.0), see psp.js. */
+/* Retro — emulator PWA. NES: jsnes (Apache-2.0). Other systems: EmulatorJS cores (GPL-3.0), see play.js. */
 const $ = (s) => document.querySelector(s);
 const library = $('#library'), player = $('#player'), grid = $('#grid');
 const menu = $('#menu'), opts = $('#opts');
@@ -21,27 +21,35 @@ async function gameId(u8) {
   return (h >>> 0).toString(16) + u8.length.toString(16);
 }
 
-const PSP_EXT = /\.(iso|cso|pbp)$/i;
+// File extension -> system. NES runs in this page (jsnes); everything else in play.html (EmulatorJS).
+const SYSTEM_BY_EXT = {
+  iso: 'psp', cso: 'psp', pbp: 'psp',
+  gb: 'gb', gbc: 'gb', gba: 'gba',
+  sfc: 'snes', smc: 'snes',
+  md: 'segaMD', gen: 'segaMD', smd: 'segaMD',
+};
+const extOf = (name) => (name.match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase();
+const OTHER_IN_ZIP = /\.(gb|gbc|gba|sfc|smc|md|gen|smd)$/i;
 
 // Big files: fingerprint size + first and last MB instead of hashing gigabytes.
-async function bigFileId(file) {
+async function bigFileId(file, system) {
   const MB = 1 << 20;
   const head = new Uint8Array(await file.slice(0, MB).arrayBuffer());
   const tail = new Uint8Array(await file.slice(Math.max(0, file.size - MB)).arrayBuffer());
   const buf = new Uint8Array(head.length + tail.length + 8);
   buf.set(head); buf.set(tail, head.length);
   new DataView(buf.buffer).setFloat64(head.length + tail.length, file.size);
-  return 'psp-' + (await gameId(buf));
+  return (system === 'psp' ? 'psp-' : system + '-') + (await gameId(buf));
 }
 
-async function addPsp(file) {
-  const id = await bigFileId(file);
+async function addFile(file, system) {
+  const id = await bigFileId(file, system);
   if (await Store.get('games', id)) return false;
   const free = await navigator.storage?.estimate?.();
   if (free && free.quota - free.usage < file.size * 1.1) throw new Error('Not enough free space for ' + file.name);
   await Files.write(id, file, (p) => setStatus(`Copying ${file.name}… ${Math.round(p * 100)}%`));
   await Store.put('games', id, {
-    id, name: file.name, title: Art.displayTitle(file.name), system: 'psp', size: file.size, added: Date.now(), played: 0,
+    id, name: file.name, title: Art.displayTitle(file.name), system, size: file.size, added: Date.now(), played: 0,
   });
   return true;
 }
@@ -72,7 +80,7 @@ async function render() {
     if (g.system !== 'nes') {
       const badge = document.createElement('span');
       badge.className = 'badge';
-      badge.textContent = g.system.toUpperCase();
+      badge.textContent = { gb: 'GB', gba: 'GBA', snes: 'SNES', segaMD: 'GENESIS', psp: 'PSP' }[g.system] || g.system;
       cover.append(badge);
     }
     cover.onclick = () => play(g);
@@ -104,13 +112,23 @@ $('#file').onchange = async (e) => {
   let added = 0, skipped = 0;
   setStatus('Adding…');
   for (const f of files) {
-    if (PSP_EXT.test(f.name)) {
-      try { if (await addPsp(f)) added++; } catch (err) { skipped++; alert(err.message); }
+    const sys = SYSTEM_BY_EXT[extOf(f.name)];
+    if (sys) {
+      try { if (await addFile(f, sys)) added++; } catch (err) { skipped++; alert(err.message); }
       continue;
     }
     const buf = await f.arrayBuffer();
     let entries = [];
-    if (/\.zip$/i.test(f.name)) { try { entries = await unzip(buf); } catch { /* not a zip */ } }
+    if (/\.zip$/i.test(f.name)) {
+      try {
+        entries = await unzip(buf, /\.(nes|gb|gbc|gba|sfc|smc|md|gen|smd)$/i);
+        for (const e of entries.filter((x) => OTHER_IN_ZIP.test(x.name))) {
+          if (await addFile(new File([e.data], e.name), SYSTEM_BY_EXT[extOf(e.name)])) added++;
+        }
+        entries = entries.filter((x) => !OTHER_IN_ZIP.test(x.name));
+        if (!entries.length) continue;
+      } catch { /* not a zip */ }
+    }
     else entries = [{ name: f.name, data: new Uint8Array(buf) }];
     if (!entries.length) skipped++;
     for (const { name, data } of entries) {
@@ -228,10 +246,10 @@ async function saveAll() {
 }
 
 async function play(game) {
-  if (game.system === 'psp') {
+  if (game.system !== 'nes') {
     game.played = Date.now();
     await Store.put('games', game.id, game);
-    location.href = 'psp.html#' + game.id;
+    location.href = 'play.html#' + game.id;
     return;
   }
   startAudio(); // must happen inside the tap for iOS

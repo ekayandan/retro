@@ -617,9 +617,10 @@ function navAct(a) {
   if (DIRS.includes(a)) return move(a);
   const el = document.activeElement;
   if (a === 'ok') {
-    // A gamepad or phone press isn't a user gesture, so browsers won't open the file picker for it.
-    if (el?.id === 'insert-btn' || el?.classList?.contains('add')) {
-      setStatus('To insert a game, click, tap or press Enter: browsers only open the file picker for those.');
+    // The file picker only opens with user activation. Chrome and Firefox (155+) grant it for a gamepad
+    // press; Safari doesn't, and a friend's phone (input over WebRTC) never does.
+    if ((el?.id === 'insert-btn' || el?.classList?.contains('add')) && navigator.userActivation?.isActive === false) {
+      setStatus('This browser opens the file picker only for a click, a tap or Enter.');
       return;
     }
     if (el && el !== document.body && (dlg ? dlg.contains(el) : library.contains(el))) el.click();

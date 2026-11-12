@@ -95,7 +95,7 @@ async function render() {
     more.className = 'more';
     more.textContent = '⋯';
     more.setAttribute('aria-label', 'Options');
-    more.onclick = () => { optsGame = g; $('#opts-title').textContent = g.title; opts.showModal(); };
+    more.onclick = () => { optsGame = g; $('#opts-title').textContent = g.title; disarm(); opts.showModal(); };
     row.append(name, more);
     card.append(cover, row);
     grid.append(card);
@@ -152,15 +152,24 @@ $('#file').onchange = async (e) => {
   }
   if (navigator.storage?.persist) navigator.storage.persist(); // ask the browser not to evict our data
   await render();
-  setStatus(`${added} added${skipped ? `, ${skipped} skipped (not a supported game)` : ''}`);
+  setStatus((added ? `${added} game${added > 1 ? 's' : ''} inserted` : 'No new games')
+    + (skipped ? ` · ${skipped} skipped (not a game Retro knows)` : ''));
   fetchMissingArt();
 };
 
+// Deleting asks twice, inside the same dialog: the first tap arms the button, the second deletes.
+const delBtn = opts.querySelector('[data-act=delete]');
+function disarm() { delBtn.classList.remove('armed'); delBtn.textContent = 'Delete game and saves'; }
 opts.onclick = async (e) => {
   const act = e.target.dataset?.act;
   if (!act) return;
+  if (act === 'delete' && !delBtn.classList.contains('armed')) {
+    delBtn.classList.add('armed');
+    delBtn.textContent = 'Tap again to delete';
+    return;
+  }
   opts.close();
-  if (act === 'delete' && confirm(`Delete "${optsGame.title}" and its saves?`)) {
+  if (act === 'delete') {
     await Store.removeGame(optsGame.id);
     artUrls.delete(optsGame.id);
     render();
@@ -186,7 +195,7 @@ const fb32 = new Uint32Array(image.data.buffer);
 const RING = 8192;
 const ringL = new Float32Array(RING), ringR = new Float32Array(RING);
 let rw = 0, rr = 0;
-let audio = null, muted = localStorage.getItem('retro.mute') === '1';
+let audio = null, outGain = null, muted = localStorage.getItem('retro.mute') === '1';
 
 let nes = null, current = null, running = false, raf = 0, last = 0, acc = 0, sramDirty = false, sramTimer = 0;
 
@@ -201,12 +210,21 @@ function startAudio() {
       const n = Math.min(L.length, avail);
       for (let i = 0; i < L.length; i++) {
         if (i < n) {
-          L[i] = muted ? 0 : ringL[rr]; R[i] = muted ? 0 : ringR[rr];
+          L[i] = ringL[rr]; R[i] = ringR[rr];
           rr = (rr + 1) % RING;
         } else { L[i] = 0; R[i] = 0; }
       }
     };
-    proc.connect(audio.destination);
+    // Mute only the speakers here; a faraway friend watching (link.js) keeps hearing the game.
+    outGain = audio.createGain();
+    outGain.gain.value = muted ? 0 : 1;
+    proc.connect(outGain);
+    outGain.connect(audio.destination);
+    if (audio.createMediaStreamDestination && canvas.captureStream) {
+      const dest = audio.createMediaStreamDestination();
+      proc.connect(dest);
+      Link.share({ video: canvas.captureStream(60).getVideoTracks()[0], audio: dest.stream.getAudioTracks()[0] });
+    }
   }
   audio.resume();
 }
@@ -310,6 +328,7 @@ menu.onclick = async (e) => {
   if (act === 'mute') {
     muted = !muted;
     localStorage.setItem('retro.mute', muted ? '1' : '0');
+    if (outGain) outGain.gain.value = muted ? 0 : 1;
     e.target.textContent = 'Sound: ' + (muted ? 'off' : 'on');
     return;
   }
@@ -358,6 +377,10 @@ Link.onInput((p, { b }) => {
   input.phone[p] = new Set(b.map((i) => RETROPAD_TO_NES[i]).filter((x) => x !== undefined));
 });
 $('#link-btn').onclick = () => Link.show();
+// "Insert game" is a <label> for the hidden file input; make it work from the keyboard too.
+$('label[for=file]').onkeydown = (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#file').click(); }
+};
 
 const KEYS = {
   ArrowUp: 4, ArrowDown: 5, ArrowLeft: 6, ArrowRight: 7, KeyW: 4, KeyS: 5, KeyA: 6, KeyD: 7,

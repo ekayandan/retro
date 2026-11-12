@@ -1,4 +1,6 @@
-/* Phone controller. Opened from the QR code on the laptop: pad.html#<room>. See link.js for the protocol.
+/* Phone controller. Opened from the QR code on the laptop (pad.html#<room>), or from an invite link
+ * (pad.html?watch#<room>) by a friend far away, who also gets the game's picture and sound in the middle.
+ * See link.js for the protocol.
  * Left half: a floating joystick (put your thumb anywhere). Right half: big buttons for the system that's
  * playing; slide between them, press several at once. */
 (() => {
@@ -8,7 +10,7 @@
   // Buttons per system. i = RetroPad index (what EmulatorJS expects), at = position:
   // n/w/e/s = diamond, two buttons sit w/e, three sit a/b/c in a row.
   // stick: 'dpad' = the joystick acts as a d-pad, 'analog' = real analog stick (switchable when both are listed).
-  const DIAMOND_ABXY = [{ l: 'X', i: 9, at: 'n' }, { l: 'Y', i: 1, at: 'w' }, { l: 'A', i: 8, at: 'e' }, { l: 'B', i: 0, at: 's' }];
+  const DIAMOND_ABXY = [{ l: 'X', i: 9, at: 'n', c: 'k-x' }, { l: 'Y', i: 1, at: 'w', c: 'k-y' }, { l: 'A', i: 8, at: 'e', c: 'k-a' }, { l: 'B', i: 0, at: 's', c: 'k-b' }];
   const DIAMOND_PS = [{ l: '△', i: 9, at: 'n', c: 'tri' }, { l: '□', i: 1, at: 'w', c: 'sq' }, { l: '○', i: 8, at: 'e', c: 'ci' }, { l: '✕', i: 0, at: 's', c: 'cr' }];
   const SEL_START = [{ l: 'Select', i: 2 }, { l: 'Start', i: 3 }];
   const LAYOUTS = {
@@ -36,7 +38,7 @@
   let cid = localStorage.getItem('retro.cid');
   if (!cid) { cid = Math.random().toString(36).slice(2, 10); localStorage.setItem('retro.cid', cid); }
 
-  let peer = null, conn = null, retryTimer = 0, layout = null, system = null;
+  let peer = null, conn = null, retryTimer = 0, layout = null, system = null, title = '';
   const cover = $('#cover'), coverMsg = $('#coverMsg');
   const showCover = (msg) => { cover.hidden = false; coverMsg.textContent = msg; };
 
@@ -60,6 +62,7 @@
     if (!peer || peer.destroyed) {
       peer = new Peer({ debug: 0 });
       peer.on('open', dial);
+      peer.on('call', onScreen);
       peer.on('disconnected', () => { if (!peer.destroyed) peer.reconnect(); });
       peer.on('error', (e) => {
         if (e.type === 'peer-unavailable') showCover('Looking for the computer… keep Retro open there.');
@@ -75,16 +78,18 @@
   function dial() {
     if (conn?.open) return;
     conn?.close();
-    const c = peer.connect(PREFIX + room, { metadata: { cid }, serialization: 'json', reliable: true });
+    const c = peer.connect(PREFIX + room, { metadata: { cid, watch }, serialization: 'json', reliable: true });
     conn = c;
     const timeout = setTimeout(() => { if (!c.open) { c.close(); retryLater(); } }, 8000);
-    c.on('open', () => { clearTimeout(timeout); sendNow(); });
+    c.on('open', () => { clearTimeout(timeout); sendNow(); c.send({ t: 'watch', on: watch }); });
     c.on('data', (d) => {
       if (d?.t === 'hello') {
         cover.hidden = true;
         $('#who').textContent = 'Player ' + d.player;
         $('#who').dataset.p = d.player;
-        $('#game').textContent = d.title || 'Pick a game on the computer';
+        title = d.title || '';
+        $('#game').textContent = title || 'Picking a game…';
+        paintTv();
         if (d.system !== system || !layout) build(d.system);
         navigator.vibrate?.([20, 40, 20]);
       }
@@ -97,6 +102,41 @@
       retryLater();
     });
   }
+
+  // ---------- The screen (for friends who aren't in the room) ----------
+  const params = new URLSearchParams(location.search);
+  if (params.has('watch')) localStorage.setItem('retro.watch', '1');
+  let watch = localStorage.getItem('retro.watch') === '1';
+  const tv = $('#tv'), tvMsg = $('#tvMsg'), screenBtn = $('#screenBtn');
+
+  function onScreen(call) {
+    if (call.peer !== PREFIX + room || !watch) { call.close(); return; }
+    call.answer(); // receive only
+    call.on('stream', (s) => { tv.srcObject = s; tv.play().catch(() => {}); paintTv(); });
+  }
+  function paintTv() {
+    document.body.classList.toggle('watching', watch);
+    $('#tvWrap').hidden = !watch;
+    screenBtn.setAttribute('aria-pressed', watch);
+    const hasSound = tv.srcObject?.getAudioTracks().length;
+    tvMsg.textContent = !tv.srcObject ? 'Waiting for the picture…'
+      : !title ? 'Your friend is picking a game'
+        : (tv.muted && hasSound ? 'Tap anywhere for sound' : '');
+  }
+  screenBtn.onclick = () => {
+    watch = !watch;
+    localStorage.setItem('retro.watch', watch ? '1' : '0');
+    if (!watch) tv.srcObject = null;
+    if (conn?.open) conn.send({ t: 'watch', on: watch });
+    paintTv();
+  };
+  // Browsers only play sound after a tap; the first press of any button counts.
+  document.addEventListener('pointerdown', () => {
+    if (!tv.muted) return;
+    tv.muted = false;
+    tv.play().catch(() => {});
+    paintTv();
+  }, { capture: true });
 
   // ---------- State ----------
   const touchBtns = new Set();     // from the right side
@@ -252,6 +292,7 @@
   // pad.html?demo=psp shows a system's layout without connecting (for checking layouts).
   const demo = new URLSearchParams(location.search).get('demo');
   build(demo && LAYOUTS[demo] ? demo : 'none');
+  paintTv();
   keepAwake();
   if (demo) { cover.hidden = true; $('#who').textContent = 'Demo'; $('#game').textContent = demo; }
   else if (room) connect(); else askCode();

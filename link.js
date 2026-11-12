@@ -269,6 +269,7 @@ const Link = (() => {
     onInput(fn) { inputFn = fn; },
     onChange(fn) { listeners.add(fn); fn(); },
     count: () => players.size,
+    players: () => [...new Set(players.values())].sort(), // player numbers of the connected phones
     resend() { for (const c of players.keys()) if (c.open) hello(c); }, // e.g. the color scheme changed
     share,
     tapAudio,

@@ -14,7 +14,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 - **Play with a friend** (library, NES menu, or the *2P* button in game):
   - *Next to you*: scan the QR code with a phone and it becomes a controller: a floating joystick on the left (put your thumb anywhere; it follows your thumb), big buttons for the system on the right (the whole right side is live: the nearest button wins, and landing between two presses both). Each phone is the next player (up to 4; NES has 2).
   - *Far away*: *Send invite link* (share sheet on phones, copies the link on laptops). Your friend opens it on their phone and sees and hears the game in the middle of their controller, like a handheld, and plays as player 2 (you're player 1 at the computer). The picture and sound are the game's canvas and audio sent over WebRTC; *Screen* on the phone turns it on or off.
-  - Phones connect straight to the computer over WebRTC; only the first handshake goes through the free public [PeerJS](https://peerjs.com) server, so connecting needs internet for a moment. When two networks can't connect directly, WebRTC falls back to PeerJS's free relay (TURN) servers. Still no server of our own. The phone keeps its player number and reconnects by itself when you switch games. N64, PS1 and PSP have a *Stick: analog / d-pad* switch.
+  - Phones connect straight to the computer over WebRTC; only the first handshake goes through the free public [PeerJS](https://peerjs.com) server, so connecting needs internet for a moment. When two networks can't connect directly, WebRTC falls back to PeerJS's free relay (TURN) servers. Still no server of our own. The phone keeps its player number and reconnects by itself when you switch games. N64, PS1 and PSP have a *Stick: analog / d-pad* switch. **Steer: tilt** (button in the phone's top bar) turns the phone itself into the stick: tilt it like a steering wheel or lean it forward/back, with *Recenter* for "straight" and *Sens* for how far you have to tilt. It uses the same analog or d-pad output as the touch stick. Tilt needs the https page (iPhone also asks for motion access once).
 
 ## Files
 
@@ -28,6 +28,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `pad.html`, `pad.js`, `pad.css` | the phone controller page, with the game's screen for friends far away (`pad.html?demo=psp` previews a system's layout) |
 | `themes.css`, `theme.js` | the color schemes, and the script that applies the saved one before the page paints |
 | `fonts/` | [Jersey 10](https://github.com/scfried/soft-type-jersey) (SIL OFL 1.1, see `fonts/OFL.txt`), the arcade lettering |
+| `tilt.js` | tilt-to-joystick maths for the phone controller (no DOM; `node tools/test-tilt.js` checks it) |
 | `lib/peerjs.min.js` | [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT, see `lib/peerjs.LICENSE`) |
 | `lib/qrcode.js` | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (MIT) |
 | `lib/nipplejs.min.js` | [nipplejs](https://github.com/yoannmoinet/nipplejs) 1.0.4, the phone joystick (MIT, see `lib/nipplejs.LICENSE`) |

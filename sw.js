@@ -1,9 +1,9 @@
 // Offline cache for the app itself. Games, saves and box art live in IndexedDB / OPFS, not here.
 // Bump VERSION whenever any file changes so phones pick up the update.
-const VERSION = 'retro-v10';
+const VERSION = 'retro-v11';
 const FILES = [
   './', 'index.html', 'style.css', 'app.js', 'storage.js', 'art.js', 'lib/jsnes.min.js', 'manifest.webmanifest',
-  'play.html', 'play.js', 'link.js', 'lib/peerjs.min.js', 'lib/qrcode.js', 'lib/nipplejs.min.js', 'pad.html', 'pad.js', 'pad.css',
+  'play.html', 'play.js', 'link.js', 'lib/peerjs.min.js', 'lib/qrcode.js', 'lib/nipplejs.min.js', 'pad.html', 'pad.js', 'pad.css', 'tilt.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
   'fonts/jersey10-latin.woff2', 'themes.css', 'theme.js',
 ];

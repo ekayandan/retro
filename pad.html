@@ -21,13 +21,23 @@
     <span id="game" class="game"></span>
     <button id="screenBtn" class="chip" aria-pressed="false">Screen</button>
     <button id="mode" class="chip" hidden>Stick: analog</button>
+    <button id="steer" class="chip" aria-pressed="false">Steer: touch</button>
     <button id="full" class="chip" aria-label="Full screen">⛶</button>
   </header>
 
   <main id="pad" class="pad">
     <section id="left" class="left">
       <div id="shL" class="shoulders"></div>
-      <div id="stickZone" class="stick-zone"><span class="hint">thumb anywhere here</span></div>
+      <div id="stickZone" class="stick-zone"><span class="hint">thumb anywhere here</span>
+        <div id="tiltUi" class="tilt-ui" hidden>
+          <div class="tilt-ring" aria-hidden="true"><i id="tiltDot"></i></div>
+          <p id="tiltMsg" class="tilt-msg" role="status">Tilt the phone to steer</p>
+          <div class="tilt-btns">
+            <button id="recenter" class="chip">Recenter</button>
+            <button id="sens" class="chip">Medium</button>
+          </div>
+        </div>
+      </div>
     </section>
     <section class="center">
       <div id="tvWrap" class="tv-wrap" hidden>
@@ -54,6 +64,7 @@
 
   <script src="lib/peerjs.min.js"></script>
   <script src="lib/nipplejs.min.js"></script>
+  <script src="tilt.js"></script>
   <script src="pad.js"></script>
 </body>
 </html>

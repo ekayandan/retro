@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { parseDat, baseTitle, kindOf, regionsOf, norm, buildSystem } = require('./build-catalog.js');
+const { matchGames, mergeSameGame } = require('./popularity.js');
 
 // Parser
 const parsed = parseDat('clrmamepro (\n\tname "X"\n\tversion "1.2"\n)\ngame (\n\tname "A \\"B\\" (USA)"\n\trom ( name "a.nes" crc 1234ABCD )\n)\n');
@@ -25,6 +26,33 @@ assert.strictEqual(kindOf('Game (USA) (DLC)'), 'dlc');
 assert.strictEqual(kindOf('Super Mario World (USA)'), undefined);
 assert.strictEqual(norm('007: Agent Under Fire (Europe)'), norm('007 - Agent Under Fire (USA)'));
 assert.strictEqual(norm('Legend of Zelda, The (USA)'), norm('The Legend of Zelda'));
+assert.strictEqual(norm('Pokemon Red (USA)'), norm('Pokémon Red'));
+assert.strictEqual(norm('Tom & Jerry'), norm('Tom and Jerry'));
+
+// Popularity: matching catalog titles to Wikidata games
+const titles = [
+  { title: 'Legend of Zelda, The - A Link to the Past', releases: [{ name: 'Legend of Zelda, The - A Link to the Past (USA)' }] },
+  { title: 'Final Fantasy III', releases: [{ name: 'Final Fantasy III (USA)' }] },
+  { title: 'Zelda no Densetsu - Kamigami no Triforce', releases: [{ name: 'Zelda no Densetsu - Kamigami no Triforce (Japan)' }] },
+  { title: 'Unknown Game', releases: [{ name: 'Unknown Game (Japan)' }] },
+];
+const games = [
+  { qid: 'Q1', wiki: 40, article: 'The Legend of Zelda: A Link to the Past', names: ['The Legend of Zelda: A Link to the Past', 'Zelda no Densetsu: Kamigami no Triforce'] },
+  { qid: 'Q2', wiki: 35, article: 'Final Fantasy VI', names: ['Final Fantasy VI', 'Final Fantasy III'] },
+  { qid: 'Q3', wiki: 3, article: 'Final Fantasy III (bootleg)', names: ['Final Fantasy III'] },
+];
+const m = matchGames(titles, games, norm, baseTitle);
+assert.strictEqual(m.get(titles[0]).qid, 'Q1');
+assert.strictEqual(m.get(titles[1]).qid, 'Q2', 'by alias; the better-known game wins a shared name');
+assert.strictEqual(m.get(titles[2]).qid, 'Q1', 'the Japanese name is an alias');
+assert.strictEqual(m.has(titles[3]), false);
+// The Japanese and English titles of one game become one title, named after the English release
+const cat = { titles: titles.map((t, i) => ({ ...t, year: [1991, 1994, 1991, 1990][i], regions: [['USA'], ['USA'], ['Japan'], ['Japan']][i] })) };
+mergeSameGame(cat, matchGames(cat.titles, games, norm, baseTitle));
+assert.deepStrictEqual(cat.titles.map((t) => t.title), ['Legend of Zelda, The - A Link to the Past', 'Final Fantasy III', 'Unknown Game']);
+assert.strictEqual(cat.titles[0].releases.length, 2);
+assert.deepStrictEqual(cat.titles[0].regions, ['USA', 'Japan']);
+
 
 // A fake database: one cartridge system, one disc system
 const src = fs.mkdtempSync(path.join(os.tmpdir(), 'catalog-test-'));

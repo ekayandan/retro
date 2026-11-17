@@ -9,6 +9,10 @@
   ];
   const KIND_LABEL = { proto: 'Proto', beta: 'Beta', demo: 'Demo', pirate: 'Pirate', homebrew: 'Homebrew', unlicensed: 'Unl', app: 'App', hack: 'Hack', bios: 'BIOS' };
   const PAGE = 120;
+  const compact = (n) => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+  // Most popular: English Wikipedia views lately (when the build could get them), then how many Wikipedias cover the game.
+  // Games Wikipedia doesn't know come last, A–Z.
+  const byPopularity = (a, b) => (b.views || 0) - (a.views || 0) || (b.wiki || 0) - (a.wiki || 0) || a.title.localeCompare(b.title);
 
   let systems = [];
   let current = null;   // { sys, data }
@@ -90,10 +94,14 @@
     const decades = [...new Set(data.titles.filter((t) => t.year).map((t) => Math.floor(t.year / 10) * 10))].sort();
     fillSelect('#genre', 'All genres', genres.map((g) => [g, g]), keepFilters ? params.get('genre') : '');
     fillSelect('#decade', 'Any year', decades.map((d) => [d, d + 's']), keepFilters ? params.get('decade') : '');
+    // Systems without popularity data (an older build, or Wikidata was down) fall back to A–Z
+    const hasPop = data.titles.some((t) => t.wiki);
+    $('#sort').querySelector('[value=popular]').disabled = !hasPop;
     if (keepFilters) {
       $('#players').value = params.get('players') || '';
-      $('#sort').value = params.get('sort') || 'title';
+      $('#sort').value = params.get('sort') || 'popular';
     }
+    if ($('#sort').value === 'popular' && !hasPop) $('#sort').value = 'title';
     filter();
     save();
   }
@@ -120,7 +128,8 @@
       }
       return true;
     });
-    if (sort !== 'title') {
+    if (sort === 'popular') list = [...list].sort(byPopularity);
+    else if (sort !== 'title') {
       const dir = sort === 'year' ? 1 : -1;
       list = [...list].sort((a, b) => (a.year ? 0 : 1) - (b.year ? 0 : 1) || dir * ((a.year || 0) - (b.year || 0)) || a.title.localeCompare(b.title));
     }
@@ -128,13 +137,15 @@
     const c = data.stats.coverage;
     $('#summary').replaceChildren(
       el('b', { textContent: `${fmt(list.length)} ${list.length === 1 ? 'game' : 'games'}` }),
-      ` · ${sys.name} (${sys.maker}, ${sys.year}) · from ${data.source.list} ${data.source.version || ''} · known: year ${c.year}%, genre ${c.genre}%, developer ${c.dev}%, players ${c.players}%`,
+      ` · ${sys.name} (${sys.maker}, ${sys.year}) · from ${data.source.list} ${data.source.version || ''} · known: year ${c.year}%, genre ${c.genre}%, developer ${c.dev}%, players ${c.players}%`
+        + (c.popularity !== undefined ? `, popularity ${c.popularity}%` : ''),
     );
     $('#grid').replaceChildren();
     shown = 0;
     more();
   }
 
+  const sort = () => $('#sort').value;
   function more() {
     if (!current || shown >= list.length) return;
     const base = current.data.thumbnails;
@@ -144,7 +155,7 @@
       const noart = () => art.replaceChildren(el('div', { className: 'noart', textContent: t.title }), ...tag());
       const tag = () => (t.kind ? [el('span', { className: 'tag', textContent: KIND_LABEL[t.kind] || t.kind })] : []);
       art.append(artImg(t, base, noart), ...tag());
-      const sub = [t.year, t.genre].filter(Boolean).join(' · ');
+      const sub = [t.year, t.genre, sort() === 'popular' && t.wiki ? (t.views !== undefined ? compact(t.views) + ' views' : t.wiki + ' wikis') : ''].filter(Boolean).join(' · ');
       const btn = el('button', { className: 'cat-card', type: 'button' }, art, el('b', { textContent: t.title }), sub ? el('span', { textContent: sub }) : null);
       btn.onclick = () => openDetail(t);
       frag.append(el('li', {}, btn));
@@ -167,7 +178,16 @@
       ['Released', t.year], ['Developer', t.dev], ['Publisher', t.pub], ['Genre', t.genre],
       ['Players', t.players], ['Series', t.franchise], ['ESRB', t.esrb], ['Regions', t.regions?.join(', ')],
     ].filter(([, v]) => v);
-    $('#d-facts').replaceChildren(...facts.flatMap(([k, v]) => [el('dt', { textContent: k }), el('dd', { textContent: String(v) })]));
+    if (t.wiki) {
+      const views = t.views !== undefined ? `${compact(t.views)} English Wikipedia views in the last ${data.popularity?.viewsDays || 60} days · ` : '';
+      const link = t.wp ? el('a', { href: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(t.wp.replace(/ /g, '_')), target: '_blank', rel: 'noopener', textContent: 'Wikipedia' }) : null;
+      facts.push(['Popularity', [views + `articles in ${t.wiki} ${t.wiki === 1 ? 'language' : 'languages'}`, link ? ' · ' : '', link]]);
+    }
+    $('#d-facts').replaceChildren(...facts.flatMap(([k, v]) => {
+      const dd = el('dd');
+      dd.append(...(Array.isArray(v) ? v.filter((x) => x !== null && x !== '') : [String(v)]));
+      return [el('dt', { textContent: k }), dd];
+    }));
     $('#d-releases').replaceChildren(...t.releases.map((r) => el('tr', {},
       el('td', {}, r.name, r.discs ? ` · ${r.discs} discs` : '', r.kind ? el('span', { className: 'tag', textContent: KIND_LABEL[r.kind] || r.kind }) : null),
       el('td', { textContent: r.year || '' }),
@@ -183,7 +203,7 @@
     const p = new URLSearchParams({ system: current.sys.id });
     const add = (k, v) => { if (v) p.set(k, v); };
     add('q', $('#q').value.trim()); add('genre', $('#genre').value); add('decade', $('#decade').value);
-    add('players', $('#players').value); add('sort', $('#sort').value === 'title' ? '' : $('#sort').value);
+    add('players', $('#players').value); add('sort', $('#sort').value === 'popular' ? '' : $('#sort').value);
     add('all', $('#extra').checked ? '1' : '');
     history.replaceState(null, '', '?' + p);
     for (const [k, v] of p) params.set(k, v);

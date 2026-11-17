@@ -6,11 +6,16 @@
 //   node tools/build-catalog.js                      download from GitHub (raw.githubusercontent.com)
 //   node tools/build-catalog.js --src ../libretro-database   use a local clone instead (much faster)
 //   node tools/build-catalog.js --only snes,psx      just these systems
+//   node tools/build-catalog.js --popularity         also add popularity from Wikidata + Wikipedia pageviews
+//                                                    (needs query.wikidata.org and wikimedia.org; behind a proxy
+//                                                    run with NODE_USE_ENV_PROXY=1); --no-views skips the pageviews
 //
 // libretro-database is CC BY-SA 4.0, so the generated files are too (see catalog/README.md).
 
 const fs = require('fs');
 const path = require('path');
+
+const { addPopularity } = require('./popularity.js');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'catalog');
@@ -46,7 +51,9 @@ const getAll = (list, key) => list.filter(([k]) => k === key).map(([, v]) => v);
 // ---------- names ----------
 
 // "ActRaiser (USA) (Rev 1)" -> "actraiser"; "007: Agent Under Fire" == "007 - Agent Under Fire"
-const norm = (s) => s.toLowerCase().replace(/\([^)]*\)|\[[^\]]*\]/g, '').replace(/^the |, the\b/g, '').replace(/[^a-z0-9]+/g, '');
+// "Pokémon" == "Pokemon", "Ghosts 'n Goblins" == "Ghosts n Goblins", "Tom & Jerry" == "Tom and Jerry"
+const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\([^)]*\)|\[[^\]]*\]/g, '')
+  .replace(/&/g, ' and ').trim().replace(/^the |, the\b/g, '').replace(/[^a-z0-9]+/g, '');
 const normFull = (s) => s.toLowerCase().replace(/[^a-z0-9()]+/g, '');
 const normSerial = (s) => s.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
@@ -249,27 +256,32 @@ async function buildSystem(sys, opts) {
   out.sort((a, b) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }));
   for (const t of out) if (t.players === undefined) delete t.players;
 
-  const releaseCount = out.reduce((n, t) => n + t.releases.length, 0);
-  const retail = out.filter((t) => !t.kind);
-  const pct = (f) => (retail.length ? Math.round((100 * retail.filter((t) => t[f] !== undefined).length) / retail.length) : 0);
   return {
     id: sys.id,
     name: sys.name,
     source: { list: sys.source === 'no-intro' ? 'No-Intro' : 'Redump', db: sys.db, version: get(header, 'version') || null },
     license: 'CC BY-SA 4.0, from libretro-database (https://github.com/libretro/libretro-database)',
     thumbnails: `https://raw.githubusercontent.com/libretro-thumbnails/${sys.db.replace(/ /g, '_')}/master/`,
-    stats: {
-      titles: out.length, retail: retail.length, releases: releaseCount,
-      coverage: { year: pct('year'), genre: pct('genre'), dev: pct('dev'), pub: pct('pub'), players: pct('players') },
-    },
+    stats: stats(out),
     titles: out,
   };
+}
+
+function stats(titles) {
+  const retail = titles.filter((t) => !t.kind);
+  const pct = (f) => (retail.length ? Math.round((100 * retail.filter((t) => t[f] !== undefined).length) / retail.length) : 0);
+  const s = {
+    titles: titles.length, retail: retail.length, releases: titles.reduce((n, t) => n + t.releases.length, 0),
+    coverage: { year: pct('year'), genre: pct('genre'), dev: pct('dev'), pub: pct('pub'), players: pct('players') },
+  };
+  if (titles.some((t) => t.wiki)) s.coverage.popularity = pct('wiki');
+  return s;
 }
 
 async function main() {
   const args = process.argv.slice(2);
   const opt = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined; };
-  const opts = { src: opt('--src') };
+  const opts = { src: opt('--src'), popularity: args.includes('--popularity'), views: !args.includes('--no-views') };
   const only = opt('--only')?.split(',');
   const { systems } = JSON.parse(fs.readFileSync(path.join(OUT, 'systems.json'), 'utf8'));
   const index = [];
@@ -281,11 +293,21 @@ async function main() {
     }
     process.stdout.write(sys.id.padEnd(10));
     const cat = await buildSystem(sys, opts);
+    let pop = '';
+    if (opts.popularity && sys.wikidata) {
+      try {
+        const r = await addPopularity(cat, sys.wikidata, norm, baseTitle, opts);
+        cat.stats = stats(cat.titles); // titles that turned out to be one game were merged
+        pop = `  popular ${cat.stats.coverage.popularity}% (${r.matched}/${r.wikidataGames} Wikidata games)`;
+      } catch (e) {
+        pop = '  popularity failed: ' + e.message; // the catalog still works, just without the "popular" sort
+      }
+    }
     fs.mkdirSync(path.join(OUT, 'data'), { recursive: true });
     fs.writeFileSync(path.join(OUT, 'data', sys.id + '.json'), JSON.stringify(cat));
     index.push(summary(sys, cat));
     const s = cat.stats;
-    console.log(`${String(s.titles).padStart(6)} titles ${String(s.retail).padStart(6)} retail   year ${s.coverage.year}%  genre ${s.coverage.genre}%  dev ${s.coverage.dev}%`);
+    console.log(`${String(s.titles).padStart(6)} titles ${String(s.retail).padStart(6)} retail   year ${s.coverage.year}%  genre ${s.coverage.genre}%  dev ${s.coverage.dev}%${pop}`);
   }
   fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify({ generated: new Date().toISOString().slice(0, 10), systems: index }, null, 1) + '\n');
 }
@@ -296,4 +318,4 @@ function summary(sys, cat) {
 }
 
 if (require.main === module) main().catch((e) => { console.error(e); process.exit(1); });
-module.exports = { parseDat, baseTitle, kindOf, regionsOf, norm, buildSystem };
+module.exports = { parseDat, baseTitle, kindOf, regionsOf, norm, buildSystem, stats };

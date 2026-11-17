@@ -43,6 +43,7 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `catalog.html`, `catalog.js`, `catalog.css` | the game catalog page |
 | `catalog/systems.json` | every system the catalog covers: offered today, next for the browser, or for the desktop app / hosting |
 | `tools/build-catalog.js` | builds `catalog/index.json` and `catalog/data/*.json` from libretro-database (not committed; the Pages workflow builds them) |
+| `tools/popularity.js` | popularity for the catalog: Wikidata (how many Wikipedias cover a game) and English Wikipedia pageviews over the last 12 months |
 | `tools/test-catalog.js` | `node tools/test-catalog.js` checks the builder on a tiny fake database (runs in CI) |
 | `tools/test-nav.js` | `node tools/test-nav.js` checks `nav-input.js` (runs in CI) |
 | `tools/test-core.js` | `node tools/test-core.js` checks core, battery saves, save states, zip (runs in CI) |

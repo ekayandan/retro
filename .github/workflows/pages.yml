@@ -23,8 +23,14 @@ jobs:
           node-version: 20
       - run: node tools/test-core.js
       - run: node tools/test-catalog.js
-      - name: Build the game catalog from libretro-database
-        run: node tools/build-catalog.js
+      # Wikipedia pageviews are kept between runs, keyed by month, so only the first deploy of a month fetches them
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: popularity-${{ github.run_id }}
+          restore-keys: popularity-
+      - name: Build the game catalog (libretro-database, popularity from Wikidata + Wikipedia)
+        run: node tools/build-catalog.js --popularity
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

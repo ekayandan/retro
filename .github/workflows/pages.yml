@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: 20
       - run: node tools/test-core.js
+      - run: node tools/test-catalog.js
+      - name: Build the game catalog from libretro-database
+        run: node tools/build-catalog.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

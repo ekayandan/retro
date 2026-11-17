@@ -1,11 +1,11 @@
 // Offline cache for the app itself. Games, saves and box art live in IndexedDB / OPFS, not here.
 // Bump VERSION whenever any file changes so phones pick up the update.
-const VERSION = 'retro-v14';
+const VERSION = 'retro-v15';
 const FILES = [
   './', 'index.html', 'style.css', 'app.js', 'nav-input.js', 'storage.js', 'art.js', 'lib/jsnes.min.js', 'manifest.webmanifest',
   'play.html', 'play.js', 'link.js', 'lib/peerjs.min.js', 'lib/qrcode.js', 'lib/nipplejs.min.js', 'lib/lrud.js', 'pad.html', 'pad.js', 'pad.css', 'tilt.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
-  'fonts/jersey10-latin.woff2', 'themes.css', 'theme.js',
+  'fonts/jersey10-latin.woff2', 'themes.css', 'theme.js', 'catalog.html', 'catalog.js', 'catalog.css',
 ];
 // EmulatorJS and its cores are cached the first time a game for that system is opened, not on install.
 const LAZY = /\/ejs\//;

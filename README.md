@@ -17,6 +17,8 @@ Bring your own game files — nothing is uploaded, there is no server of our own
   - *Far away*: *Send invite link* (share sheet on phones, copies the link on laptops). Your friend opens it on their phone and sees and hears the game in the middle of their controller, like a handheld, and plays as player 2 (you're player 1 at the computer). The picture and sound are the game's canvas and audio sent over WebRTC; *Screen* on the phone turns it on or off.
   - Phones connect straight to the computer over WebRTC; only the first handshake goes through the free public [PeerJS](https://peerjs.com) server, so connecting needs internet for a moment. When two networks can't connect directly, WebRTC falls back to PeerJS's free relay (TURN) servers. Still no server of our own. The phone keeps its player number and reconnects by itself when you switch games. N64, PS1 and PSP have a *Stick: analog / d-pad* switch. **Steer: tilt** (button in the phone's top bar) turns the phone itself into the stick: tilt it like a steering wheel or lean it forward/back, with *Recenter* for "straight" and *Sens* for how far you have to tilt. It uses the same analog or d-pad output as the touch stick. Tilt needs the https page (iPhone also asks for motion access once).
 
+- **Game catalog** (`catalog.html`, also *Settings → Game catalog*): every known game for the systems we offer and the ones we may add next (49 systems, ~58,700 retail games), with year, developer, publisher, genre, players, regional releases, serials and checksums, from No-Intro, Redump and libretro-database. Built by `node tools/build-catalog.js`; see [`catalog/README.md`](catalog/README.md) for sources, coverage and next steps.
+
 ## Files
 
 | File | What |
@@ -38,6 +40,10 @@ Bring your own game files — nothing is uploaded, there is no server of our own
 | `lib/jsnes.min.js` | emulator core, [jsnes](https://github.com/bfirsh/jsnes) 2.1.0 (Apache-2.0, see `lib/jsnes.LICENSE`) |
 | `sw.js` | offline cache, plus the cross-origin isolation headers PSP threads need (GitHub Pages can't send them). **Bump `VERSION` on every change** so phones update |
 | `nav-input.js` | menu input from gamepads and phones: button mappings, hold-to-repeat, ignoring buttons held when a menu appears (no DOM, tested by `tools/test-nav.js`) |
+| `catalog.html`, `catalog.js`, `catalog.css` | the game catalog page |
+| `catalog/systems.json` | every system the catalog covers: offered today, next for the browser, or for the desktop app / hosting |
+| `tools/build-catalog.js` | builds `catalog/index.json` and `catalog/data/*.json` from libretro-database (not committed; the Pages workflow builds them) |
+| `tools/test-catalog.js` | `node tools/test-catalog.js` checks the builder on a tiny fake database (runs in CI) |
 | `tools/test-nav.js` | `node tools/test-nav.js` checks `nav-input.js` (runs in CI) |
 | `tools/test-core.js` | `node tools/test-core.js` checks core, battery saves, save states, zip (runs in CI) |
 | `tools/make-test-rom.js` | builds a tiny homebrew test program |

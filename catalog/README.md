@@ -6,7 +6,8 @@ openly licensed data. It lists games and facts about them; it never contains or 
 - **Browse it**: `catalog.html` (also *Settings → Game catalog* in the app). Pick a system, search titles,
   developers, publishers or serials, filter by genre, decade and players, open a game to see every regional
   release with its serial and checksum. Box art comes from libretro-thumbnails, like the library's.
-- **Build it**: `node tools/build-catalog.js` (about a minute, downloads from GitHub), or
+- **Build it**: `node tools/build-catalog.js --popularity` (a few minutes, downloads from GitHub, Wikidata and
+  Wikipedia; behind a proxy add `NODE_USE_ENV_PROXY=1`), or
   `node tools/build-catalog.js --src path/to/libretro-database` with a local clone. `--only snes,psx` rebuilds
   a few systems. The output (`catalog/index.json`, `catalog/data/<system>.json`, ~16 MB, ~3 MB gzipped) is not
   committed: the Pages workflow builds it on every deploy, so it follows upstream's weekly updates.
@@ -122,6 +123,27 @@ What this says:
 - **GameTDB years** (GameCube, Wii, 3DS, PS3) are sometimes a re-release or digital date; we keep the earliest
   year across a game's releases and drop years before the system launched, which hides most of it.
 
+## Popularity: most popular games first
+
+The catalog opens on **Most popular**, from two free, no-key sources (both CC0):
+
+- **Wikidata**: each game is matched by name (English label, or any alias, so "Mother 2" finds EarthBound) to
+  the games Wikidata lists for that platform, leaving out series and franchise items. The number used is how many
+  Wikipedia language editions have an article on the game: a steady measure of how well known it is.
+- **English Wikipedia pageviews** over the last 60 days: current interest. Fetched 50 articles per request. When
+  Wikipedia refuses (it rate-limits shared cloud addresses, as it did in the container this was built in), that
+  system and the rest of the build rank by Wikidata alone, so the two measures are never mixed in one ranking.
+  Expect GitHub's deploy runner to get them; it's untested there so far.
+
+Ranking: pageviews, then Wikipedia language count, then A–Z for games Wikipedia doesn't know. Matched share of
+retail games: 50–60% on SNES, Genesis, N64, Wii, GameCube, Xbox, Commodore 64; 30–45% on most others; 10–25% on
+WonderSwan and PC Engine CD (mostly Japan-only). The unmatched games are overwhelmingly obscure, so the top of
+each list is solid. Caveats: a game released on many systems (Doom, Space Invaders, Tetris) is counted once
+across all of them, so it ranks high on every system it's on.
+
+Wikidata also tells us when two regional names are one game (EarthBound / Mother 2, Starwing / Star Fox,
+Final Fantasy III (USA) / VI), so those are merged into one title named after the English release.
+
 ## Checksums: knowing what a player loaded
 
 Every cartridge release carries its CRC32 (and disc releases their serial plus each disc's first-track CRC).
@@ -131,10 +153,9 @@ the desktop app and hosted sessions. Not wired into the app yet.
 
 ## Next steps
 
-1. **Wikidata enrichment** (CC0, no key): match by title + platform (Wikidata has P400 platform, P577
-   release date, P178 developer, P123 publisher, P136 genre, P179 series, plus IGDB/MobyGames IDs) to fill the
-   CD-era and PSP/DS gaps. It's one SPARQL query per platform; the build container for this work couldn't reach
-   query.wikidata.org, so it's not in this first version.
+1. **Fill missing facts from Wikidata**: the popularity match already links ~40% of games to Wikidata, which
+   also has release dates (P577), developer (P178), publisher (P123) and genre (P136). That would fill much of
+   the CD-era and PSP/DS gaps for the games people actually look for.
 2. **Recognize inserted games by checksum** (above).
 3. **Arcade**: MAME/FBNeo lists are in libretro-database, but each romset version only works with its own
    emulator version, so this waits until we pick the arcade core.

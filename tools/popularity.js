@@ -56,7 +56,9 @@ async function wikidataGames(platforms) {
 // English Wikipedia views over the last 60 days (the most the API gives), 50 articles per request.
 // All or nothing: if Wikipedia refuses (it rate-limits shared cloud addresses), returns null and the system
 // is ranked by Wikidata alone, so games with and without view counts are never mixed in one ranking.
+let viewsRefused = false; // once Wikipedia says no, don't ask again for every system
 async function pageviews(articles) {
+  if (viewsRefused) return null;
   const today = new Date().toISOString().slice(0, 10);
   let cache = { day: today, views: {} };
   try {
@@ -83,7 +85,8 @@ async function pageviews(articles) {
       for (const t of batch) if (cache.views[t] === undefined) cache.views[t] = 0;
     }
   } catch (e) {
-    console.warn('\n  pageviews unavailable, ranking by Wikidata only:', e.message);
+    console.warn('\n  pageviews unavailable, ranking by Wikidata only from here on:', e.message);
+    viewsRefused = true;
     return null;
   } finally {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
